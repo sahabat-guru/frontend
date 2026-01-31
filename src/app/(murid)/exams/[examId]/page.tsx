@@ -289,24 +289,49 @@ export default function ExamDetailPage() {
 				});
 			}
 
-			setProctoring(prev => ({
-				...prev,
-				score: newScore,
-				alertLevel: newAlertLevel,
-				currentViolation,
-				annotatedFrame: data.annotated_frame || null,
-				detectedObjects,
-				events: data.events
-					? [
-						...data.events.map(e => ({
-							type: e.type,
-							level: e.level,
-							timestamp: new Date(),
-						})),
-						...prev.events,
-					].slice(0, 10)
-					: prev.events,
-			}));
+			// Build events list - include events from server AND current violation
+			setProctoring(prev => {
+				let updatedEvents = [...prev.events];
+
+				// Add events from server response
+				if (data.events && data.events.length > 0) {
+					const newServerEvents = data.events.map(e => ({
+						type: e.type,
+						level: e.level,
+						timestamp: new Date(),
+					}));
+					updatedEvents = [...newServerEvents, ...updatedEvents];
+				}
+
+				// If there's a current violation detected, add it to events if not already present
+				if (currentViolation) {
+					const violationExists = updatedEvents.some(
+						e => e.type === currentViolation &&
+						(new Date().getTime() - e.timestamp.getTime()) < 1000
+					);
+
+					if (!violationExists) {
+						const level = newAlertLevel === "danger" ? "danger" : newAlertLevel === "warning" ? "warning" : "info";
+						updatedEvents = [
+							{ type: currentViolation, level, timestamp: new Date() },
+							...updatedEvents
+						];
+					}
+				}
+
+				// Keep only last 10 events
+				updatedEvents = updatedEvents.slice(0, 10);
+
+				return {
+					...prev,
+					score: newScore,
+					alertLevel: newAlertLevel,
+					currentViolation,
+					annotatedFrame: data.annotated_frame || null,
+					detectedObjects,
+					events: updatedEvents,
+				};
+			});
 
 			// Clear violation after 3 seconds
 			if (currentViolation) {
@@ -361,6 +386,16 @@ export default function ExamDetailPage() {
 				proctoringSocketRef.current.sendBrowserEvent("tab_switch", {
 					timestamp: new Date().toISOString(),
 				});
+
+				// Add to local events list
+				setProctoring(prev => ({
+					...prev,
+					events: [
+						{ type: "tab_switch", level: "danger", timestamp: new Date() },
+						...prev.events
+					].slice(0, 10)
+				}));
+
 				toast({
 					title: "Peringatan!",
 					description: "Ganti tab terdeteksi dan dicatat",
@@ -374,6 +409,15 @@ export default function ExamDetailPage() {
 				proctoringSocketRef.current.sendBrowserEvent("window_blur", {
 					timestamp: new Date().toISOString(),
 				});
+
+				// Add to local events list
+				setProctoring(prev => ({
+					...prev,
+					events: [
+						{ type: "window_blur", level: "warning", timestamp: new Date() },
+						...prev.events
+					].slice(0, 10)
+				}));
 			}
 		};
 
