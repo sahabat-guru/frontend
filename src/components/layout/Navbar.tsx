@@ -26,25 +26,6 @@ export function Navbar() {
 					<Bell className="h-5 w-5" />
 					<span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />
 				</Button>
-
-				<div className="flex items-center gap-3 pl-4 border-l">
-					<div className="text-right hidden md:block">
-						<p className="text-sm font-medium leading-none">
-							{user?.name}
-						</p>
-						<p className="text-xs text-muted-foreground">
-							{user?.role}
-						</p>
-					</div>
-					<Avatar>
-						<AvatarImage
-							src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`}
-						/>
-						<AvatarFallback>
-							{user?.name?.[0] || "U"}
-						</AvatarFallback>
-					</Avatar>
-				</div>
 			</div>
 		</header>
 	);

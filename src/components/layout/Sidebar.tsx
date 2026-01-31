@@ -52,7 +52,10 @@ export function Sidebar() {
 			{/* Header / Logo */}
 			<div className="h-20 flex items-center justify-between px-4 border-b">
 				{!isCollapsed ? (
-					<div className="flex items-center gap-2 overflow-hidden">
+					<Link
+						href="/"
+						className="flex items-center gap-2 overflow-hidden hover:opacity-80 transition-opacity"
+					>
 						<Image
 							src="/icon/sahabatguru-icon.png"
 							alt="Logo"
@@ -63,9 +66,9 @@ export function Sidebar() {
 						<span className="font-bold text-xl font-heading text-slate-800 whitespace-nowrap">
 							SahabatGuru
 						</span>
-					</div>
+					</Link>
 				) : (
-					<div className="w-full flex justify-center">
+					<Link href="/" className="w-full flex justify-center">
 						<Image
 							src="/icon/sahabatguru-icon.png"
 							alt="Logo"
@@ -73,7 +76,7 @@ export function Sidebar() {
 							height={32}
 							className="w-8 h-8 object-contain"
 						/>
-					</div>
+					</Link>
 				)}
 
 				<Button
@@ -112,7 +115,7 @@ export function Sidebar() {
 						<Link key={link.href} href={link.href}>
 							<div
 								className={cn(
-									"flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
+									"flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative mb-2",
 									isActive
 										? "bg-sky-500 text-white shadow-md shadow-sky-200"
 										: "text-slate-500 hover:bg-slate-100 hover:text-slate-900",
