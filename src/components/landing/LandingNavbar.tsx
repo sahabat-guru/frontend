@@ -33,22 +33,9 @@ export function LandingNavbar() {
 				>
 					Dashboard
 				</Link>
-				<Link
-					href="#pricing"
-					className="hover:text-primary transition-colors"
-				>
-					Harga
-				</Link>
-				<Link
-					href="#showcase"
-					className="hover:text-primary transition-colors"
-				>
-					Karya
-				</Link>
 			</div>
 
 			<div className="flex items-center gap-4">
-		
 				<Link href="/login">
 					<Button className="bg-gradient-primary hover:opacity-90 transition-opacity rounded-full px-6">
 						Masuk
