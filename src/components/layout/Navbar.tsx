@@ -13,20 +13,10 @@ export function Navbar() {
 			<div className="flex items-center gap-4">
 				{/* Breadcrumb or Page Title could go here */}
 				<h2 className="text-lg font-semibold text-foreground/80">
-					Welcome back, {user?.name || "User"}
+					Selamat datang, {user?.name || "User"}
 				</h2>
 			</div>
 
-			<div className="flex items-center gap-4">
-				<Button
-					variant="ghost"
-					size="icon"
-					className="relative text-muted-foreground hover:text-foreground"
-				>
-					<Bell className="h-5 w-5" />
-					<span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />
-				</Button>
-			</div>
 		</header>
 	);
 }
