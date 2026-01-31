@@ -25,7 +25,8 @@ import {
 	Presentation,
 	ClipboardList,
 	BookOpen,
-	Archive
+	Archive,
+	Box
 } from "lucide-react";
 
 export default function MaterialPage() {
@@ -206,6 +207,13 @@ export default function MaterialPage() {
 					</TabsContent>
 
 					<TabsContent value="arsip" className="mt-0">
+						<div className="mb-6 shrink-0">
+							<h3 className="text-xl font-bold flex items-center gap-2 text-[#0F172A]">
+								<Archive className="h-6 w-6 text-slate-700" />
+								Archive & Version Control
+							</h3>
+							<p className="text-muted-foreground text-sm">Kelola semua materi yang pernah dibuat</p>
+						</div>
 						<div className="overflow-hidden pb-6">
 							<MaterialArchive />
 						</div>
