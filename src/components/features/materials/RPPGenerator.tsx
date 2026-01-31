@@ -133,7 +133,7 @@ export function RPPGenerator({ onGenerate }: RPPGeneratorProps) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-5 p-6 pt-2 flex-1 overflow-y-auto">
+      <CardContent className="space-y-5 p-6 pt-2">
         {/* Topik / Materi Pokok */}
         <div className="space-y-2">
           <Label className="text-gray-700 font-medium">Topik/Materi Pokok <span className="text-red-500">*</span></Label>
@@ -288,7 +288,7 @@ export function RPPGenerator({ onGenerate }: RPPGeneratorProps) {
       </CardContent>
 
       {/* Generate Button - Full Width, Green Gradient or Solid Color */}
-      <div className="p-6 pt-0 shrink-0">
+      <div className="p-4 pt-0 shrink-0">
         <Button
           className="w-full h-12 text-lg bg-gradient-to-r from-[#6ACBE0] to-[#85E0A3] hover:opacity-95 text-white rounded-xl shadow-lg shadow-[#5FC7A4]/20 transition-all hover:scale-[1.01] active:scale-[0.99] border-0"
           onClick={handleGenerate}

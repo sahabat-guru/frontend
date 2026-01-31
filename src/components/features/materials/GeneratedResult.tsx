@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { FileJson, Save, Download, FileText } from "lucide-react";
+import { FileJson, Save, Download, FileText, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -15,9 +15,17 @@ export function GeneratedResult({ result, type }: GeneratedResultProps) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-gray-400 min-h-[400px]">
         <div className="flex flex-col items-center gap-3">
-          <FileText className="h-16 w-16 text-gray-300" />
+          {type === "PPT" ? (
+            <Presentation className="h-16 w-16 text-gray-300" />
+          ) : (
+            <FileText className="h-16 w-16 text-gray-300" />
+          )}
           <p className="text-gray-500 font-medium">
-            {type === "RPP" ? "Klik \"Generate RPP\" untuk melihat hasil" : "Klik Generate untuk melihat hasil"}
+            {type === "RPP"
+              ? "Klik \"Generate RPP\" untuk melihat hasil"
+              : type === "PPT"
+                ? "Klik \"Generate PPT\" untuk membuat slide"
+                : "Klik Generate untuk melihat hasil"}
           </p>
         </div>
       </div>

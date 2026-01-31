@@ -48,7 +48,7 @@ export default function MaterialPage() {
 	};
 
 	return (
-		<div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
+		<div className="space-y-6 flex flex-col">
 			<div className="flex items-center justify-between shrink-0">
 				<div>
 					<h2 className="text-3xl font-bold tracking-tight text-[#0F172A]">
@@ -60,7 +60,7 @@ export default function MaterialPage() {
 				</div>
 			</div>
 
-			<Tabs defaultValue="rpp" value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+			<Tabs defaultValue="rpp" value={activeTab} onValueChange={setActiveTab} className="w-full">
 				<TabsList className="bg-transparent p-0 gap-2 h-auto w-full justify-start flex-wrap mb-6">
 					<TabsTrigger
 						value="rpp"
@@ -99,9 +99,9 @@ export default function MaterialPage() {
 					</TabsTrigger>
 				</TabsList>
 
-				<div className="flex-1 overflow-visible">
-					{/* Generators Section with Split View */}
-					<TabsContent value="rpp" className="mt-0 h-full flex flex-col pb-6">
+				<div className="w-full">
+					{/* Generators Section with Natural Height */}
+					<TabsContent value="rpp" className="mt-0">
 						<div className="mb-4 shrink-0">
 							<h3 className="text-xl font-bold flex items-center gap-2">
 								<FileText className="text-primary" />
@@ -109,7 +109,7 @@ export default function MaterialPage() {
 							</h3>
 							<p className="text-muted-foreground text-sm">Generate RPP/Modul Ajar lengkap dalam satu klik</p>
 						</div>
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0">
+						<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 							<div className="h-full pr-2">
 								<RPPGenerator onGenerate={handleGenerate} />
 							</div>
@@ -119,7 +119,7 @@ export default function MaterialPage() {
 										<CardTitle className="text-xl font-bold text-gray-800">Preview RPP</CardTitle>
 										<CardDescription className="text-gray-500">Hasil generate RPP/Modul Ajar</CardDescription>
 									</CardHeader>
-									<CardContent className="flex-1 p-0 overflow-hidden">
+									<CardContent className="h-full p-0">
 										<GeneratedResult result={result} type="RPP" />
 									</CardContent>
 								</Card>
@@ -127,74 +127,86 @@ export default function MaterialPage() {
 						</div>
 					</TabsContent>
 
-					<TabsContent value="ppt" className="mt-0 h-full">
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-							<div className="h-full overflow-y-auto pr-2">
-								<div className="mb-4">
-									<h3 className="text-xl font-bold flex items-center gap-2">
-										<Presentation className="text-primary" />
-										Smart Presentation Maker
-									</h3>
-									<p className="text-muted-foreground text-sm">Generate slide presentasi menarik instan</p>
-								</div>
+					<TabsContent value="ppt" className="mt-0">
+						<div className="mb-4 shrink-0">
+							<h3 className="text-xl font-bold flex items-center gap-2">
+								<Presentation className="text-[#6E2CF4]" />
+								Presentation Architect
+							</h3>
+							<p className="text-muted-foreground text-sm">Generate slide presentasi visual secara instan</p>
+						</div>
+						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+							<div className="h-full pr-2 col-span-12 lg:col-span-4">
 								<PPTGenerator onGenerate={handleGenerate} />
 							</div>
-							<div className="h-full overflow-hidden pb-6">
-								<div className="mb-4">
-									<h3 className="text-xl font-bold">Preview PPT</h3>
-									<p className="text-muted-foreground text-sm">Hasil generate Presentation</p>
-								</div>
-								<GeneratedResult result={result} type="PPT" />
+							<div className="h-full overflow-hidden col-span-12 lg:col-span-8">
+								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
+									<CardHeader className="pb-2 bg-white shrink-0">
+										<CardTitle className="text-xl font-bold text-gray-800">Preview Slide</CardTitle>
+										<CardDescription className="text-gray-500">Belum ada slide</CardDescription>
+									</CardHeader>
+									<CardContent className="h-full p-0">
+										<GeneratedResult result={result} type="PPT" />
+									</CardContent>
+								</Card>
 							</div>
 						</div>
 					</TabsContent>
 
-					<TabsContent value="soal" className="mt-0 h-full">
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-							<div className="h-full overflow-y-auto pr-2">
-								<div className="mb-4">
-									<h3 className="text-xl font-bold flex items-center gap-2">
-										<ClipboardList className="text-primary" />
-										Smart Question Generator
-									</h3>
-									<p className="text-muted-foreground text-sm">Buat soal latihan dan ujian variatif</p>
-								</div>
+					<TabsContent value="soal" className="mt-0">
+						<div className="mb-4 shrink-0">
+							<h3 className="text-xl font-bold flex items-center gap-2">
+								<ClipboardList className="text-primary" />
+								Smart Question Generator
+							</h3>
+							<p className="text-muted-foreground text-sm">Buat soal latihan dan ujian variatif</p>
+						</div>
+						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+							<div className="h-full pr-2 col-span-12 lg:col-span-4">
 								<SoalGenerator onGenerate={handleGenerate} />
 							</div>
-							<div className="h-full overflow-hidden pb-6">
-								<div className="mb-4">
-									<h3 className="text-xl font-bold">Preview Soal</h3>
-									<p className="text-muted-foreground text-sm">Hasil generate Soal Latihan/Ujian</p>
-								</div>
-								<GeneratedResult result={result} type="QUESTIONS" />
+							<div className="h-full overflow-hidden col-span-12 lg:col-span-8">
+								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
+									<CardHeader className="pb-2 bg-white shrink-0">
+										<CardTitle className="text-xl font-bold text-gray-800">Preview Soal</CardTitle>
+										<CardDescription className="text-gray-500">Hasil generate Soal Latihan/Ujian</CardDescription>
+									</CardHeader>
+									<CardContent className="h-full p-0">
+										<GeneratedResult result={result} type="QUESTIONS" />
+									</CardContent>
+								</Card>
 							</div>
 						</div>
 					</TabsContent>
 
-					<TabsContent value="lkpd" className="mt-0 h-full">
-						<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-							<div className="h-full overflow-y-auto pr-2">
-								<div className="mb-4">
-									<h3 className="text-xl font-bold flex items-center gap-2">
-										<BookOpen className="text-primary" />
-										Smart LKPD Creator
-									</h3>
-									<p className="text-muted-foreground text-sm">Desain lembar kerja siswa interaktif</p>
-								</div>
+					<TabsContent value="lkpd" className="mt-0">
+						<div className="mb-4 shrink-0">
+							<h3 className="text-xl font-bold flex items-center gap-2">
+								<BookOpen className="text-primary" />
+								Smart LKPD Creator
+							</h3>
+							<p className="text-muted-foreground text-sm">Desain lembar kerja siswa interaktif</p>
+						</div>
+						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+							<div className="h-full pr-2 col-span-12 lg:col-span-4">
 								<LKPDGenerator onGenerate={handleGenerate} />
 							</div>
-							<div className="h-full overflow-hidden pb-6">
-								<div className="mb-4">
-									<h3 className="text-xl font-bold">Preview LKPD</h3>
-									<p className="text-muted-foreground text-sm">Hasil generate Lembar Kerja</p>
-								</div>
-								<GeneratedResult result={result} type="LKPD" />
+							<div className="h-full overflow-hidden col-span-12 lg:col-span-8">
+								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
+									<CardHeader className="pb-2 bg-white shrink-0">
+										<CardTitle className="text-xl font-bold text-gray-800">Preview LKPD</CardTitle>
+										<CardDescription className="text-gray-500">Hasil generate Lembar Kerja</CardDescription>
+									</CardHeader>
+									<CardContent className="h-full p-0">
+										<GeneratedResult result={result} type="LKPD" />
+									</CardContent>
+								</Card>
 							</div>
 						</div>
 					</TabsContent>
 
-					<TabsContent value="arsip" className="mt-0 h-full">
-						<div className="h-full overflow-hidden pb-6">
+					<TabsContent value="arsip" className="mt-0">
+						<div className="overflow-hidden pb-6">
 							<MaterialArchive />
 						</div>
 					</TabsContent>

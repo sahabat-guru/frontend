@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import axios from "axios"; // Keep axios for now, though fetch is used in the new handleGenerate
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -16,25 +17,32 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, MonitorPlay } from "lucide-react";
+import { Loader2, Palette, Image as ImageIcon, Wand2, BookOpen } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface PPTGeneratorProps {
-  onGenerate?: (result: any) => void;
+  onGenerate: (data: any) => void;
 }
+
+const TEMPLATES = [
+  { id: "minimalis", name: "Minimalis", description: "Clean, simple, dan elegan" },
+  { id: "futuristic", name: "Futuristic", description: "Tema gelap aksen neon" },
+  { id: "professional", name: "Professional", description: "Tampilan korporat terpercaya" },
+  { id: "colorful", name: "Colorful", description: "Warna-warni cerah playful" },
+  { id: "organic", name: "Organic", description: "Nuansa alam earthy" },
+];
 
 export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     topic: "",
-    kurikulum: "kurikulum_merdeka",
     jenjang: "",
-    template: "minimalis",
+    template: "futuristic",
+    kurikulum: "kurikulum_merdeka",
     detail_level: "lengkap",
     include_examples: true,
   });
@@ -46,8 +54,8 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
   const handleGenerate = async () => {
     if (!formData.topic || !formData.jenjang) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: "Validation Error",
+        description: "Mohon isi topik dan jenjang.",
         variant: "destructive",
       });
       return;
@@ -55,32 +63,33 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
 
     setLoading(true);
     try {
+      // Construct payload exactly as backend requires
       const payload = {
-        type: "PPT",
-        topic: formData.topic,
-        kurikulum: formData.kurikulum,
-        jenjang: formData.jenjang,
         template: formData.template,
-        detail_level: formData.detail_level,
+        topic: formData.topic,
+        kurikulum: formData.kurikulum, // Defaults to kurikulum_merdeka
+        jenjang: formData.jenjang,
+        detail_level: formData.detail_level, // Defaults to lengkap
         include_examples: formData.include_examples,
       };
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const response = await axios.post(
-        `${API_URL}/materials/generate`,
-        payload
-      );
-
-      onGenerate?.(response.data);
-      toast({
-        title: "Success",
-        description: "PPT generated successfully!",
+      const response = await fetch(`${API_URL}/materials/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "PPT", ...payload }),
       });
-    } catch (error: any) {
-      console.error("Error generating PPT:", error);
+
+      if (!response.ok) throw new Error("Generation failed");
+
+      const data = await response.json();
+      onGenerate(data.data || data);
+      toast({ title: "Success", description: "Presentasi berhasil dibuat!" });
+    } catch (error) {
+      console.error(error);
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to generate PPT",
+        description: "Gagal membuat presentasi.",
         variant: "destructive",
       });
     } finally {
@@ -89,106 +98,141 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
   };
 
   return (
-    <Card className="h-fit border-none shadow-none">
-      <CardHeader className="px-0 pt-0">
-        <CardTitle className="text-xl">Konfigurasi PPT</CardTitle>
-        <CardDescription>
-          Buat slide presentasi yang menarik dan informatif
+    <Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
+      <CardHeader className="pb-2 bg-white shrink-0">
+        <CardTitle className="text-xl font-bold text-gray-800">Konfigurasi PPT</CardTitle>
+        <CardDescription className="text-gray-500">
+          Atur parameter presentasi
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4 px-0">
+
+      <CardContent className="space-y-5 p-6 pt-2">
+        {/* Topik */}
         <div className="space-y-2">
-          <Label>Topik Presentasi *</Label>
-          <Input
-            placeholder="Contoh: Pengenalan AI"
+          <Label className="text-gray-700 font-medium">Topik Presentasi <span className="text-red-500">*</span></Label>
+          <Textarea
+            placeholder="Contoh: Hukum Newton tentang Gerak"
             value={formData.topic}
             onChange={(e) => handleChange("topic", e.target.value)}
+            className="min-h-[80px] resize-y bg-gray-50 border-gray-200 focus:bg-white transition-colors"
           />
         </div>
 
+        {/* Kurikulum & Jenjang */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label className="text-gray-700 font-medium">Kurikulum</Label>
+            <Select
+              value={formData.kurikulum}
+              onValueChange={(val) => handleChange("kurikulum", val)}
+            >
+              <SelectTrigger className="bg-gray-50 border-gray-200">
+                <SelectValue placeholder="Pilih Kurikulum" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="kurikulum_merdeka">Kurikulum Merdeka</SelectItem>
+                <SelectItem value="kurikulum_2013">Kurikulum 2013</SelectItem>
+                <SelectItem value="cambridge">Cambridge</SelectItem>
+                <SelectItem value="international_baccalaureate">International Baccalaureate</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-gray-700 font-medium">Kelas <span className="text-red-500">*</span></Label>
+            <Select value={formData.jenjang} onValueChange={(val) => handleChange("jenjang", val)}>
+              <SelectTrigger className="bg-gray-50 border-gray-200">
+                <SelectValue placeholder="Pilih Kelas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Kelas 1">Kelas 1</SelectItem>
+                <SelectItem value="Kelas 2">Kelas 2</SelectItem>
+                <SelectItem value="Kelas 3">Kelas 3</SelectItem>
+                <SelectItem value="Kelas 4">Kelas 4</SelectItem>
+                <SelectItem value="Kelas 5">Kelas 5</SelectItem>
+                <SelectItem value="Kelas 6">Kelas 6</SelectItem>
+                <SelectItem value="Kelas 7">Kelas 7</SelectItem>
+                <SelectItem value="Kelas 8">Kelas 8</SelectItem>
+                <SelectItem value="Kelas 9">Kelas 9</SelectItem>
+                <SelectItem value="Kelas 10">Kelas 10</SelectItem>
+                <SelectItem value="Kelas 11">Kelas 11</SelectItem>
+                <SelectItem value="Kelas 12">Kelas 12</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Detail Level */}
         <div className="space-y-2">
-          <Label>Jenjang *</Label>
-          <Select
-            onValueChange={(val) => handleChange("jenjang", val)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih Jenjang" />
+          <Label className="text-gray-700 font-medium">Detail Materi</Label>
+          <Select value={formData.detail_level} onValueChange={(val) => handleChange("detail_level", val)}>
+            <SelectTrigger className="bg-gray-50 border-gray-200">
+              <SelectValue placeholder="Pilih Detail" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="SD">SD</SelectItem>
-              <SelectItem value="SMP">SMP</SelectItem>
-              <SelectItem value="SMA">SMA</SelectItem>
-              <SelectItem value="SMK">SMK</SelectItem>
-              <SelectItem value="Umum">Umum</SelectItem>
+              <SelectItem value="ringkas">Ringkas</SelectItem>
+              <SelectItem value="sedang">Sedang</SelectItem>
+              <SelectItem value="lengkap">Lengkap</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Template Style</Label>
-            <Select
-              value={formData.template}
-              onValueChange={(val) => handleChange("template", val)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="minimalis">Minimalis</SelectItem>
-                <SelectItem value="profesional">Profesional</SelectItem>
-                <SelectItem value="kreatif">Kreatif</SelectItem>
-              </SelectContent>
-            </Select>
+        {/* Template Design */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Palette className="h-4 w-4 text-gray-500" />
+            <Label className="text-gray-700 font-medium">Template Desain</Label>
           </div>
-          <div className="space-y-2">
-            <Label>Detail Level</Label>
-            <Select
-              value={formData.detail_level}
-              onValueChange={(val) => handleChange("detail_level", val)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ringkas">Ringkas</SelectItem>
-                <SelectItem value="lengkap">Lengkap</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap gap-2">
+            {TEMPLATES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => handleChange("template", t.id)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full border transition-all ${formData.template === t.id
+                  ? "bg-[#0093E9] text-white border-[#0093E9]"
+                  : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                  }`}
+                title={t.description}
+              >
+                {t.name}
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="include_examples"
-            checked={formData.include_examples}
-            onChange={(e) => handleChange("include_examples", e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-          />
-          <Label htmlFor="include_examples">Sertakan Contoh</Label>
+        {/* Feature Toggles */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleChange("include_examples", !formData.include_examples)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${formData.include_examples
+              ? "bg-[#0093E9] text-white border-[#0093E9]"
+              : "bg-white text-gray-600 border-gray-200"
+              }`}
+          >
+            <BookOpen className="h-3 w-3" />
+            Include Examples
+          </button>
         </div>
-
       </CardContent>
-      <CardFooter className="px-0">
+
+      <div className="p-4 pt-0 shrink-0">
         <Button
-          className="w-full bg-[#5FC7A4] hover:bg-[#4ab593] text-white"
+          className="w-full h-12 text-lg bg-gradient-to-r from-[#6ACBE0] to-[#85E0A3] hover:opacity-95 text-white rounded-xl shadow-lg shadow-[#5FC7A4]/20 transition-all hover:scale-[1.01] active:scale-[0.99] border-0"
           onClick={handleGenerate}
           disabled={loading}
         >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Generating PPT...
             </>
           ) : (
             <>
-              <MonitorPlay className="mr-2 h-4 w-4" />
+              <Wand2 className="mr-2 h-5 w-5" />
               Generate PPT
             </>
           )}
         </Button>
-      </CardFooter>
+      </div>
     </Card>
   );
 }
