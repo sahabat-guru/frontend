@@ -144,11 +144,24 @@ export default function ScoringPage() {
 			await scoringApi.triggerScoring(selectedExam.id);
 			// Refresh data after scoring
 			await fetchExams();
+			// Show success toast
+			toast({
+				title: "Penilaian sedang diproses",
+				description: "Silahkan tunggu beberapa saat untuk hasil penilaian",
+			});
+			// Close modal after success
+			setSelectedExam(null);
 		} catch (err) {
 			console.error("Scoring failed:", err);
+			toast({
+				title: "Penilaian gagal",
+				description:
+					"Terjadi kesalahan saat menilai jawaban. Silakan coba lagi.",
+				variant: "destructive",
+			});
 		} finally {
 			setIsGrading(false);
-			setSelectedExam(null);
+            setSelectedExam(null);
 		}
 	};
 
@@ -422,7 +435,13 @@ export default function ScoringPage() {
 					!open && !isGrading && setSelectedExam(null)
 				}
 			>
-				<DialogContent className="sm:max-w-[425px]">
+				<DialogContent
+					className="sm:max-w-[425px]"
+					onPointerDownOutside={(e) =>
+						isGrading && e.preventDefault()
+					}
+					onEscapeKeyDown={(e) => isGrading && e.preventDefault()}
+				>
 					<DialogHeader>
 						<DialogTitle className="flex items-center gap-2">
 							Penilaian Otomatis dengan AI
