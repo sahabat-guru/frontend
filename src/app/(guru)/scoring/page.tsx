@@ -14,6 +14,7 @@ import {
 	FileText,
 	Loader2,
 	RefreshCw,
+	CheckCircle,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -42,7 +43,10 @@ export default function ScoringPage() {
 	const [selectedExam, setSelectedExam] = useState<ExamListItem | null>(null);
 	const [isGrading, setIsGrading] = useState(false);
 	const [examScores, setExamScores] = useState<
-		Record<string, { submissions: number; average: number | null }>
+		Record<
+			string,
+			{ submissions: number; scored: number; average: number | null }
+		>
 	>({});
 
 	// Fetch exams
@@ -61,17 +65,22 @@ export default function ScoringPage() {
 			// Fetch scores for each exam
 			const scoresMap: Record<
 				string,
-				{ submissions: number; average: number | null }
+				{ submissions: number; scored: number; average: number | null }
 			> = {};
 			for (const exam of data.exams) {
 				try {
 					const scores = await scoringApi.getExamScores(exam.id);
 					scoresMap[exam.id] = {
 						submissions: scores.stats.submitted,
+						scored: scores.stats.scored,
 						average: scores.stats.average || null,
 					};
 				} catch {
-					scoresMap[exam.id] = { submissions: 0, average: null };
+					scoresMap[exam.id] = {
+						submissions: 0,
+						scored: 0,
+						average: null,
+					};
 				}
 			}
 			setExamScores(scoresMap);
@@ -343,13 +352,44 @@ export default function ScoringPage() {
 											{exam.status === "ONGOING" && (
 												<Button
 													size="sm"
-													className="bg-sky-500 hover:bg-sky-600 text-white shadow-sm shadow-sky-200"
+													className={`shadow-sm shadow-sky-200 ${
+														examScores[exam.id]
+															?.scored > 0 &&
+														examScores[exam.id]
+															?.scored >=
+															examScores[exam.id]
+																?.submissions
+															? "bg-green-500 hover:bg-green-600 text-white"
+															: "bg-sky-500 hover:bg-sky-600 text-white"
+													}`}
 													onClick={() =>
 														handleOpenAiDialog(exam)
 													}
+													disabled={
+														examScores[exam.id]
+															?.scored > 0 &&
+														examScores[exam.id]
+															?.scored >=
+															examScores[exam.id]
+																?.submissions
+													}
 												>
-													<Sparkles className="h-3.5 w-3.5 mr-2" />
-													Nilai AI
+													{examScores[exam.id]
+														?.scored > 0 &&
+													examScores[exam.id]
+														?.scored >=
+														examScores[exam.id]
+															?.submissions ? (
+														<>
+															<CheckCircle className="h-3.5 w-3.5 mr-2" />
+															Sudah Dinilai
+														</>
+													) : (
+														<>
+															<Sparkles className="h-3.5 w-3.5 mr-2" />
+															Nilai AI
+														</>
+													)}
 												</Button>
 											)}
 										</div>
@@ -364,7 +404,9 @@ export default function ScoringPage() {
 			{/* AI Grading Dialog */}
 			<Dialog
 				open={!!selectedExam}
-				onOpenChange={(open) => !open && setSelectedExam(null)}
+				onOpenChange={(open) =>
+					!open && !isGrading && setSelectedExam(null)
+				}
 			>
 				<DialogContent className="sm:max-w-[425px]">
 					<DialogHeader>

@@ -115,7 +115,11 @@ export default function ExamReviewPage() {
 
 	// Update override score when answer changes
 	useEffect(() => {
-		if (currentAnswer?.finalScore !== null) {
+		if (
+			currentAnswer &&
+			currentAnswer.finalScore !== null &&
+			currentAnswer.finalScore !== undefined
+		) {
 			setOverrideScore(currentAnswer.finalScore.toString());
 		} else {
 			setOverrideScore("");
