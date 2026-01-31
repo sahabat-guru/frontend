@@ -183,26 +183,33 @@ export default function ExamDetailPage() {
 	const startProctoringSession = useCallback(async () => {
 		if (!user || !examData) return;
 
+		// Cheating detection service URL (Cloud Run)
+		const CHEATING_DETECTION_URL = process.env.NEXT_PUBLIC_PROCTORING_WS_URL?.replace("wss://", "https://").replace("ws://", "http://") 
+			|| "https://cheating-detection-865275048150.asia-southeast2.run.app";
+
 		try {
-			const token = tokenManager.getAccessToken();
-			const response = await fetch(`${API_BASE}/proctoring/sessions/start`, {
+			// Create session on Cloud Run cheating detection service
+			const response = await fetch(`${CHEATING_DETECTION_URL}/api/sessions/start`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					"Authorization": `Bearer ${token}`,
 				},
 				body: JSON.stringify({
-					examId: examData.id,
-					examName: examData.title,
+					student_id: user.id,
+					exam_id: examData.id,
+					student_name: user.name,
+					exam_name: examData.title,
 				}),
 			});
 
 			if (!response.ok) {
-				throw new Error("Failed to start proctoring session");
+				throw new Error("Failed to start proctoring session on Cloud Run");
 			}
 
 			const result = await response.json();
-			const sessionId = result.data.sessionId;
+			const sessionId = result.session_id;
+			
+			console.log("[Proctoring] Session created on Cloud Run:", sessionId);
 
 			// Connect to WebSocket
 			const socket = new StudentProctoringSocket(
@@ -487,15 +494,13 @@ export default function ExamDetailPage() {
 			// Finish exam
 			await api.post(`/exams/${examId}/finish`);
 
-			// End proctoring session
+			// End proctoring session on Cloud Run
 			if (proctoring.sessionId) {
 				try {
-					const token = tokenManager.getAccessToken();
-					await fetch(`${API_BASE}/proctoring/sessions/${proctoring.sessionId}/end`, {
+					const CHEATING_DETECTION_URL = process.env.NEXT_PUBLIC_PROCTORING_WS_URL?.replace("wss://", "https://").replace("ws://", "http://") 
+						|| "https://cheating-detection-865275048150.asia-southeast2.run.app";
+					await fetch(`${CHEATING_DETECTION_URL}/api/sessions/${proctoring.sessionId}/end`, {
 						method: "POST",
-						headers: {
-							"Authorization": `Bearer ${token}`,
-						},
 					});
 				} catch (error) {
 					console.error("Failed to end proctoring session:", error);

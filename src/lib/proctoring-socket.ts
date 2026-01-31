@@ -72,7 +72,9 @@ export interface StudentUpdate {
 	}[];
 }
 
-export type ProctoringMessageHandler = (data: DetectionResult | StudentUpdate) => void;
+// Handler types for different socket types
+export type StudentMessageHandler = (data: DetectionResult) => void;
+export type TeacherMessageHandler = (data: StudentUpdate) => void;
 export type ProctoringErrorHandler = (error: Event) => void;
 export type ProctoringCloseHandler = (event: CloseEvent) => void;
 
@@ -80,7 +82,7 @@ export type ProctoringCloseHandler = (event: CloseEvent) => void;
 export class StudentProctoringSocket {
 	private ws: WebSocket | null = null;
 	private sessionId: string;
-	private onMessage: ProctoringMessageHandler;
+	private onMessage: StudentMessageHandler;
 	private onError?: ProctoringErrorHandler;
 	private onClose?: ProctoringCloseHandler;
 	private reconnectAttempts = 0;
@@ -89,7 +91,7 @@ export class StudentProctoringSocket {
 
 	constructor(
 		sessionId: string,
-		onMessage: ProctoringMessageHandler,
+		onMessage: StudentMessageHandler,
 		onError?: ProctoringErrorHandler,
 		onClose?: ProctoringCloseHandler
 	) {
