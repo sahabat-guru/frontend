@@ -67,6 +67,9 @@ export default function ScoringPage() {
 	);
 	const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 	const [analyticsExamTitle, setAnalyticsExamTitle] = useState("");
+	const [triggeredExams, setTriggeredExams] = useState<Set<string>>(
+		new Set(),
+	);
 
 	// Fetch exams
 	const fetchExams = useCallback(async () => {
@@ -166,6 +169,8 @@ export default function ScoringPage() {
 				description:
 					"Silahkan tunggu beberapa saat untuk hasil penilaian",
 			});
+			// Mark this exam as triggered so button stays disabled
+			setTriggeredExams((prev) => new Set(prev).add(selectedExam.id));
 			// Close modal after success
 			setSelectedExam(null);
 		} catch (err) {
@@ -431,33 +436,54 @@ export default function ScoringPage() {
 												<Button
 													size="sm"
 													className={`shadow-sm shadow-sky-200 ${
-														examScores[exam.id]
-															?.scored > 0 &&
-														examScores[exam.id]
-															?.scored >=
-															examScores[exam.id]
-																?.submissions
-															? "bg-green-500 hover:bg-green-600 text-white"
-															: "bg-sky-500 hover:bg-sky-600 text-white"
+														triggeredExams.has(
+															exam.id,
+														)
+															? "bg-amber-500 hover:bg-amber-600 text-white"
+															: examScores[
+																		exam.id
+																  ]?.scored >
+																		0 &&
+																  examScores[
+																		exam.id
+																  ]?.scored >=
+																		examScores[
+																			exam
+																				.id
+																		]
+																			?.submissions
+																? "bg-green-500 hover:bg-green-600 text-white"
+																: "bg-sky-500 hover:bg-sky-600 text-white"
 													}`}
 													onClick={() =>
 														handleOpenAiDialog(exam)
 													}
 													disabled={
-														examScores[exam.id]
+														triggeredExams.has(
+															exam.id,
+														) ||
+														(examScores[exam.id]
 															?.scored > 0 &&
-														examScores[exam.id]
-															?.scored >=
 															examScores[exam.id]
-																?.submissions
+																?.scored >=
+																examScores[
+																	exam.id
+																]?.submissions)
 													}
 												>
-													{examScores[exam.id]
-														?.scored > 0 &&
-													examScores[exam.id]
-														?.scored >=
-														examScores[exam.id]
-															?.submissions ? (
+													{triggeredExams.has(
+														exam.id,
+													) ? (
+														<>
+															<Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" />
+															Sedang Diproses
+														</>
+													) : examScores[exam.id]
+															?.scored > 0 &&
+													  examScores[exam.id]
+															?.scored >=
+															examScores[exam.id]
+																?.submissions ? (
 														<>
 															<CheckCircle className="h-3.5 w-3.5 mr-2" />
 															Sudah Dinilai
