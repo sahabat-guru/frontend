@@ -91,6 +91,9 @@ export default function ExamDetailPage() {
 	const [examStarted, setExamStarted] = useState(false);
 	const [cameraExpanded, setCameraExpanded] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
+	const [essayInputMode, setEssayInputMode] = useState<
+		Record<string, "text" | "image">
+	>({});
 	const [proctoring, setProctoring] = useState<ProctoringState>({
 		sessionId: null,
 		score: 0,
@@ -159,6 +162,36 @@ export default function ExamDetailPage() {
 					status: examRaw.status,
 					questions,
 				};
+
+				// Check if student has already submitted this exam
+				try {
+					const statusResponse = await api.get<{
+						success: boolean;
+						data: any;
+					}>(`/exams/${examId}/status`);
+
+					if (
+						statusResponse.data.success &&
+						statusResponse.data.data.submitted
+					) {
+						// Student has already submitted this exam
+						toast({
+							title: "Ujian sudah dikumpulkan",
+							description:
+								"Anda sudah mengerjakan ujian ini sebelumnya.",
+						});
+						// Redirect to results if published, otherwise to exams list
+						if (examRaw.status === "PUBLISHED") {
+							router.push(`/exams/${examId}/results`);
+						} else {
+							router.push("/exams");
+						}
+						return;
+					}
+				} catch (statusError) {
+					// Status check failed, continue with exam display
+					console.log("Status check skipped:", statusError);
+				}
 
 				setExamData(exam);
 			}
@@ -798,16 +831,173 @@ export default function ExamDetailPage() {
 									))}
 								</RadioGroup>
 							) : (
-								<textarea
-									value={
-										answers[currentQuestionData.id] || ""
-									}
-									onChange={(e) =>
-										handleAnswer(e.target.value)
-									}
-									className="w-full min-h-[200px] p-4 border rounded-md"
-									placeholder="Tulis jawaban Anda di sini..."
-								/>
+								<div className="space-y-4">
+									{/* Input Mode Toggle */}
+									<div className="flex gap-2">
+										<Button
+											type="button"
+											variant={
+												essayInputMode[
+													currentQuestionData.id
+												] !== "image"
+													? "default"
+													: "outline"
+											}
+											size="sm"
+											onClick={() => {
+												setEssayInputMode((prev) => ({
+													...prev,
+													[currentQuestionData.id]:
+														"text",
+												}));
+												// Clear image answer if switching to text
+												setAnswers((prev) => ({
+													...prev,
+													[currentQuestionData.id]:
+														"",
+												}));
+											}}
+										>
+											Tulis Teks
+										</Button>
+										<Button
+											type="button"
+											variant={
+												essayInputMode[
+													currentQuestionData.id
+												] === "image"
+													? "default"
+													: "outline"
+											}
+											size="sm"
+											onClick={() => {
+												setEssayInputMode((prev) => ({
+													...prev,
+													[currentQuestionData.id]:
+														"image",
+												}));
+												// Clear text answer if switching to image
+												setAnswers((prev) => ({
+													...prev,
+													[currentQuestionData.id]:
+														"",
+												}));
+											}}
+										>
+											Upload Gambar
+										</Button>
+									</div>
+
+									{/* Text Input */}
+									{essayInputMode[currentQuestionData.id] !==
+										"image" && (
+										<textarea
+											value={
+												answers[
+													currentQuestionData.id
+												] || ""
+											}
+											onChange={(e) =>
+												handleAnswer(e.target.value)
+											}
+											className="w-full min-h-[200px] p-4 border rounded-md"
+											placeholder="Tulis jawaban Anda di sini..."
+										/>
+									)}
+
+									{/* Image Upload */}
+									{essayInputMode[currentQuestionData.id] ===
+										"image" && (
+										<div className="space-y-4">
+											<div className="border-2 border-dashed rounded-lg p-8 text-center">
+												<input
+													type="file"
+													accept="image/*"
+													className="hidden"
+													id={`essay-image-${currentQuestionData.id}`}
+													onChange={(e) => {
+														const file =
+															e.target.files?.[0];
+														if (file) {
+															const reader =
+																new FileReader();
+															reader.onloadend =
+																() => {
+																	const base64 =
+																		reader.result as string;
+																	handleAnswer(
+																		`[IMAGE]${base64}`,
+																	);
+																};
+															reader.readAsDataURL(
+																file,
+															);
+														}
+													}}
+												/>
+												{answers[
+													currentQuestionData.id
+												]?.startsWith("[IMAGE]") ? (
+													<div className="space-y-2">
+														<img
+															src={answers[
+																currentQuestionData
+																	.id
+															].replace(
+																"[IMAGE]",
+																"",
+															)}
+															alt="Uploaded answer"
+															className="max-h-48 mx-auto rounded"
+														/>
+														<Button
+															type="button"
+															variant="outline"
+															size="sm"
+															onClick={() =>
+																handleAnswer("")
+															}
+														>
+															Hapus Gambar
+														</Button>
+													</div>
+												) : (
+													<label
+														htmlFor={`essay-image-${currentQuestionData.id}`}
+														className="cursor-pointer"
+													>
+														<div className="text-muted-foreground">
+															<svg
+																xmlns="http://www.w3.org/2000/svg"
+																className="h-12 w-12 mx-auto mb-2"
+																fill="none"
+																viewBox="0 0 24 24"
+																stroke="currentColor"
+															>
+																<path
+																	strokeLinecap="round"
+																	strokeLinejoin="round"
+																	strokeWidth={
+																		2
+																	}
+																	d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+																/>
+															</svg>
+															<p>
+																Klik untuk
+																upload gambar
+															</p>
+															<p className="text-xs">
+																JPG, PNG, atau
+																GIF
+															</p>
+														</div>
+													</label>
+												)}
+											</div>
+										</div>
+									)}
+								</div>
 							)}
 						</CardContent>
 					</Card>
