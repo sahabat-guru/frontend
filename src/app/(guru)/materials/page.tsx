@@ -182,10 +182,10 @@ export default function MaterialPage() {
 					<TabsContent value="lkpd" className="mt-0">
 						<div className="mb-4 shrink-0">
 							<h3 className="text-xl font-bold flex items-center gap-2">
-								<BookOpen className="text-primary" />
-								Smart LKPD Creator
+								<BookOpen className="text-[#F97316]" />
+								Student Worksheet (LKPD) Creator
 							</h3>
-							<p className="text-muted-foreground text-sm">Desain lembar kerja siswa interaktif</p>
+							<p className="text-muted-foreground text-sm">Buat lembar kerja siswa yang menarik dan interaktif</p>
 						</div>
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 							<div className="h-full pr-2 col-span-12 lg:col-span-4">
@@ -195,7 +195,7 @@ export default function MaterialPage() {
 								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
 									<CardHeader className="pb-2 bg-white shrink-0">
 										<CardTitle className="text-xl font-bold text-gray-800">Preview LKPD</CardTitle>
-										<CardDescription className="text-gray-500">Hasil generate Lembar Kerja</CardDescription>
+										<CardDescription className="text-gray-500">Belum ada konten</CardDescription>
 									</CardHeader>
 									<CardContent className="h-full p-0">
 										<GeneratedResult result={result} type="LKPD" />

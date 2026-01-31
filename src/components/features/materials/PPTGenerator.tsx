@@ -52,10 +52,10 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
   };
 
   const handleGenerate = async () => {
-    if (!formData.topic || !formData.jenjang) {
+    if (!formData.topic) {
       toast({
         title: "Validation Error",
-        description: "Mohon isi topik dan jenjang.",
+        description: "Mohon isi topik.",
         variant: "destructive",
       });
       return;
@@ -138,7 +138,7 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Kelas <span className="text-red-500">*</span></Label>
+            <Label className="text-gray-700 font-medium">Kelas</Label>
             <Select value={formData.jenjang} onValueChange={(val) => handleChange("jenjang", val)}>
               <SelectTrigger className="bg-gray-50 border-gray-200">
                 <SelectValue placeholder="Pilih Kelas" />
