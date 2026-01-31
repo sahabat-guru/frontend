@@ -48,15 +48,10 @@ export function LandingNavbar() {
 			</div>
 
 			<div className="flex items-center gap-4">
-				<Link
-					href="/login"
-					className="text-sm font-medium font-heading hover:text-primary hidden sm:block"
-				>
-					Masuk
-				</Link>
+		
 				<Link href="/login">
 					<Button className="bg-gradient-primary hover:opacity-90 transition-opacity rounded-full px-6">
-						Coba Gratis
+						Masuk
 					</Button>
 				</Link>
 			</div>

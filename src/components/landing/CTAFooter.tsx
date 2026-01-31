@@ -41,7 +41,7 @@ export function CTA() {
 							size="lg"
 							className="h-14 px-8 text-lg bg-white text-emerald-600 hover:bg-white/90 rounded-full font-bold shadow-lg"
 						>
-							Mulai Sekarang — Gratis
+							Mulai Sekarang
 						</Button>
 					</Link>
 				</div>
