@@ -15,6 +15,7 @@ import {
 	Loader2,
 	RefreshCw,
 	CheckCircle,
+	BarChart3,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -26,7 +27,16 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { scoringApi, type ExamListItem } from "@/lib/scoring-api";
+import { analyticsApi, type ExamAnalytics } from "@/lib/analytics-api";
 import { useToast } from "@/hooks/use-toast";
+import {
+	ResponsiveContainer,
+	BarChart,
+	Bar,
+	XAxis,
+	YAxis,
+	Tooltip,
+} from "recharts";
 
 // Map backend status to display status
 const statusMap: Record<string, string> = {
@@ -51,6 +61,12 @@ export default function ScoringPage() {
 			{ submissions: number; scored: number; average: number | null }
 		>
 	>({});
+	const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
+	const [analyticsData, setAnalyticsData] = useState<ExamAnalytics | null>(
+		null,
+	);
+	const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+	const [analyticsExamTitle, setAnalyticsExamTitle] = useState("");
 
 	// Fetch exams
 	const fetchExams = useCallback(async () => {
@@ -147,7 +163,8 @@ export default function ScoringPage() {
 			// Show success toast
 			toast({
 				title: "Penilaian sedang diproses",
-				description: "Silahkan tunggu beberapa saat untuk hasil penilaian",
+				description:
+					"Silahkan tunggu beberapa saat untuk hasil penilaian",
 			});
 			// Close modal after success
 			setSelectedExam(null);
@@ -161,7 +178,29 @@ export default function ScoringPage() {
 			});
 		} finally {
 			setIsGrading(false);
-            setSelectedExam(null);
+			setSelectedExam(null);
+		}
+	};
+
+	const handleOpenAnalytics = async (exam: ExamListItem) => {
+		setAnalyticsExamTitle(exam.title);
+		setAnalyticsModalOpen(true);
+		setLoadingAnalytics(true);
+		setAnalyticsData(null);
+
+		try {
+			const data = await analyticsApi.getExamAnalytics(exam.id);
+			setAnalyticsData(data);
+		} catch (err) {
+			console.error("Failed to fetch analytics:", err);
+			toast({
+				title: "Gagal memuat analytics",
+				description: "Terjadi kesalahan saat memuat data analytics.",
+				variant: "destructive",
+			});
+			setAnalyticsModalOpen(false);
+		} finally {
+			setLoadingAnalytics(false);
 		}
 	};
 
@@ -376,6 +415,18 @@ export default function ScoringPage() {
 												</Button>
 											</Link>
 
+											<Button
+												variant="outline"
+												size="sm"
+												className="bg-white hover:bg-purple-50 text-purple-600 border-purple-200"
+												onClick={() =>
+													handleOpenAnalytics(exam)
+												}
+											>
+												<BarChart3 className="h-4 w-4 mr-2" />
+												Analytics
+											</Button>
+
 											{exam.status === "FINISHED" && (
 												<Button
 													size="sm"
@@ -494,6 +545,181 @@ export default function ScoringPage() {
 							)}
 						</Button>
 					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Analytics Modal */}
+			<Dialog
+				open={analyticsModalOpen}
+				onOpenChange={setAnalyticsModalOpen}
+			>
+				<DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+					<DialogHeader>
+						<DialogTitle className="flex items-center gap-2">
+							<BarChart3 className="h-5 w-5 text-purple-600" />
+							Analytics: {analyticsExamTitle}
+						</DialogTitle>
+						<DialogDescription>
+							Statistik dan distribusi nilai ujian
+						</DialogDescription>
+					</DialogHeader>
+
+					{loadingAnalytics ? (
+						<div className="flex items-center justify-center py-12">
+							<Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+						</div>
+					) : analyticsData ? (
+						<div className="space-y-6">
+							{/* Stats Grid */}
+							<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+								<div className="bg-sky-50 rounded-lg p-3 text-center">
+									<p className="text-xl font-bold text-sky-600">
+										{analyticsData.statistics.avgScore.toFixed(
+											1,
+										)}
+									</p>
+									<p className="text-xs text-slate-500">
+										Rata-rata
+									</p>
+								</div>
+								<div className="bg-green-50 rounded-lg p-3 text-center">
+									<p className="text-xl font-bold text-green-600">
+										{analyticsData.statistics.maxScore}
+									</p>
+									<p className="text-xs text-slate-500">
+										Tertinggi
+									</p>
+								</div>
+								<div className="bg-red-50 rounded-lg p-3 text-center">
+									<p className="text-xl font-bold text-red-600">
+										{analyticsData.statistics.minScore}
+									</p>
+									<p className="text-xs text-slate-500">
+										Terendah
+									</p>
+								</div>
+								<div className="bg-amber-50 rounded-lg p-3 text-center">
+									<p className="text-xl font-bold text-amber-600">
+										{
+											analyticsData.statistics
+												.completionRate
+										}
+										%
+									</p>
+									<p className="text-xs text-slate-500">
+										Penyelesaian
+									</p>
+								</div>
+								<div className="bg-purple-50 rounded-lg p-3 text-center">
+									<p className="text-xl font-bold text-purple-600">
+										{analyticsData.statistics.scoredCount}
+									</p>
+									<p className="text-xs text-slate-500">
+										Dinilai
+									</p>
+								</div>
+								<div className="bg-slate-50 rounded-lg p-3 text-center">
+									<p className="text-xl font-bold text-slate-600">
+										{
+											analyticsData.statistics
+												.totalParticipants
+										}
+									</p>
+									<p className="text-xs text-slate-500">
+										Peserta
+									</p>
+								</div>
+							</div>
+
+							{/* Score Distribution Chart */}
+							<div className="bg-white border rounded-xl p-4">
+								<h4 className="font-semibold text-slate-700 mb-3">
+									Distribusi Nilai
+								</h4>
+								<div className="h-[200px] w-full">
+									<ResponsiveContainer
+										width="100%"
+										height="100%"
+									>
+										<BarChart
+											data={Object.entries(
+												analyticsData.scoreDistribution,
+											).map(([range, count]) => ({
+												range,
+												count,
+											}))}
+										>
+											<XAxis
+												dataKey="range"
+												fontSize={10}
+												tickLine={false}
+												axisLine={false}
+											/>
+											<YAxis
+												fontSize={12}
+												tickLine={false}
+												axisLine={false}
+											/>
+											<Tooltip />
+											<Bar
+												dataKey="count"
+												fill="#3B82F6"
+												radius={[4, 4, 0, 0]}
+											/>
+										</BarChart>
+									</ResponsiveContainer>
+								</div>
+							</div>
+
+							{/* Proctoring Violations */}
+							{analyticsData.proctoringViolations.length > 0 && (
+								<div className="bg-white border rounded-xl p-4">
+									<h4 className="font-semibold text-slate-700 mb-3">
+										Pelanggaran Proctoring (
+										{analyticsData.suspiciousCount}{" "}
+										mencurigakan)
+									</h4>
+									<div className="h-[150px] w-full">
+										<ResponsiveContainer
+											width="100%"
+											height="100%"
+										>
+											<BarChart
+												data={analyticsData.proctoringViolations.map(
+													(v) => ({
+														name: v.eventType
+															.replace(/_/g, " ")
+															.slice(0, 12),
+														count: Number(v.count),
+													}),
+												)}
+												layout="vertical"
+											>
+												<XAxis
+													type="number"
+													fontSize={12}
+												/>
+												<YAxis
+													dataKey="name"
+													type="category"
+													fontSize={10}
+													tickLine={false}
+													axisLine={false}
+													width={100}
+												/>
+												<Tooltip />
+												<Bar
+													dataKey="count"
+													fill="#EF4444"
+													radius={[0, 4, 4, 0]}
+												/>
+											</BarChart>
+										</ResponsiveContainer>
+									</div>
+								</div>
+							)}
+						</div>
+					) : null}
 				</DialogContent>
 			</Dialog>
 		</div>
