@@ -26,15 +26,18 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { scoringApi, type ExamListItem } from "@/lib/scoring-api";
+import { useToast } from "@/hooks/use-toast";
 
 // Map backend status to display status
 const statusMap: Record<string, string> = {
 	DRAFT: "Draft",
 	ONGOING: "Aktif",
 	FINISHED: "Selesai",
+	PUBLISHED: "Dipublikasi",
 };
 
 export default function ScoringPage() {
+	const { toast } = useToast();
 	const [activeTab, setActiveTab] = useState("all");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [exams, setExams] = useState<ExamListItem[]>([]);
@@ -108,6 +111,7 @@ export default function ScoringPage() {
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "FINISHED":
+			case "PUBLISHED":
 				return "bg-green-100 text-green-700 hover:bg-green-100/80 border-green-200";
 			case "ONGOING":
 				return "bg-amber-100 text-amber-700 hover:bg-amber-100/80 border-amber-200";
@@ -119,6 +123,16 @@ export default function ScoringPage() {
 	};
 
 	const handleOpenAiDialog = (exam: ExamListItem) => {
+		// Only allow AI scoring when exam is FINISHED
+		if (exam.status !== "FINISHED") {
+			toast({
+				title: "Tidak dapat menilai",
+				description:
+					"Penilaian AI hanya dapat dilakukan setelah ujian selesai (status: Selesai)",
+				variant: "destructive",
+			});
+			return;
+		}
 		setSelectedExam(exam);
 	};
 
@@ -349,7 +363,7 @@ export default function ScoringPage() {
 												</Button>
 											</Link>
 
-											{exam.status === "ONGOING" && (
+											{exam.status === "FINISHED" && (
 												<Button
 													size="sm"
 													className={`shadow-sm shadow-sky-200 ${
