@@ -1,8 +1,8 @@
 "use client";
 
-import { useUserStore, Role } from "@/lib/store";
+import { useAuthStore, Role } from "@/lib/store";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface RoleGuardProps {
 	children: React.ReactNode;
@@ -10,17 +10,33 @@ interface RoleGuardProps {
 }
 
 export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
-	const { user, isAuthenticated } = useUserStore();
+	const { user, isAuthenticated, checkAuth } = useAuthStore();
 	const router = useRouter();
+	const [isChecking, setIsChecking] = useState(true);
+	const hasChecked = useRef(false);
 
 	useEffect(() => {
-		if (!isAuthenticated) {
+		// Only check auth once on mount
+		if (hasChecked.current) return;
+		hasChecked.current = true;
+
+		const check = async () => {
+			await checkAuth();
+			setIsChecking(false);
+		};
+		check();
+	}, []);
+
+	useEffect(() => {
+		if (isChecking) return;
+
+		if (!isAuthenticated || !user) {
 			router.push("/login");
 			return;
 		}
 
-		if (user && !allowedRoles.includes(user.role)) {
-			// Redirect to their appropriate dashboard if allowed
+		if (!allowedRoles.includes(user.role)) {
+			// Redirect to their appropriate dashboard if wrong role
 			if (user.role === "GURU") {
 				router.push("/dashboard");
 			} else if (user.role === "MURID") {
@@ -29,11 +45,21 @@ export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
 				router.push("/login");
 			}
 		}
-	}, [isAuthenticated, user, router, allowedRoles]);
+	}, [isChecking, isAuthenticated, user, router, allowedRoles]);
 
-	if (!isAuthenticated || (user && !allowedRoles.includes(user.role))) {
+	// Show loading while checking auth
+	if (isChecking) {
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-muted/20">
+				<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+			</div>
+		);
+	}
+
+	if (!isAuthenticated || !user || !allowedRoles.includes(user.role)) {
 		return null; // Don't render anything while redirecting
 	}
 
 	return <>{children}</>;
 }
+

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useUserStore } from "@/lib/store";
+import { useAuthStore } from "@/lib/store";
 import { useSidebarStore } from "@/lib/sidebar-store";
 import {
 	LayoutGrid,
@@ -35,12 +35,28 @@ const muridLinks = [
 
 export function Sidebar() {
 	const pathname = usePathname();
-	const { user, logout } = useUserStore();
+	const router = useRouter();
+	const { user, logout } = useAuthStore();
 	const { isCollapsed, toggle, setCollapsed } = useSidebarStore();
 
 	if (!user) return null;
 
 	const links = user.role === "GURU" ? guruLinks : muridLinks;
+
+	const handleLogout = async () => {
+		await logout();
+		router.push("/login");
+	};
+
+	// Get user initials for avatar
+	const getInitials = (name: string) => {
+		return name
+			.split(" ")
+			.map((n) => n[0])
+			.join("")
+			.toUpperCase()
+			.slice(0, 2);
+	};
 
 	return (
 		<div
@@ -160,21 +176,17 @@ export function Sidebar() {
 					<Avatar className="h-10 w-10 border bg-sky-100 text-sky-600">
 						<AvatarImage src="" />
 						<AvatarFallback className="font-bold bg-sky-100 text-sky-600">
-							{user.role === "GURU" ? "BU" : "SIS"}
+							{getInitials(user.name)}
 						</AvatarFallback>
 					</Avatar>
 
 					{!isCollapsed && (
 						<div className="flex-1 overflow-hidden">
 							<h4 className="font-bold text-sm text-slate-800 truncate">
-								{user.role === "GURU"
-									? "Budi Utomo"
-									: "Siswa Teladan"}
+								{user.name}
 							</h4>
 							<p className="text-xs text-slate-500 truncate">
-								{user.role === "GURU"
-									? "Guru Matematika"
-									: "Kelas X-A"}
+								{user.email}
 							</p>
 						</div>
 					)}
@@ -194,7 +206,7 @@ export function Sidebar() {
 							variant="ghost"
 							size="icon"
 							className="h-8 w-8 text-slate-400 hover:text-red-500"
-							onClick={logout}
+							onClick={handleLogout}
 						>
 							<LogOut className="h-4 w-4" />
 						</Button>
