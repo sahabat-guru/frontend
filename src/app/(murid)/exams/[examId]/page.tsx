@@ -12,7 +12,7 @@ import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
-	DialogTitle
+	DialogTitle,
 } from "@/components/ui/dialog";
 import { ExamTimer } from "@/components/features/exams/ExamTimer";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +20,7 @@ import { useAuthStore } from "@/lib/store";
 import { tokenManager, api } from "@/lib/api";
 import {
 	StudentProctoringSocket,
-	DetectionResult
+	DetectionResult,
 } from "@/lib/proctoring-socket";
 import {
 	AlertTriangle,
@@ -32,7 +32,7 @@ import {
 	ShieldX,
 	Maximize2,
 	X,
-	Loader2
+	Loader2,
 } from "lucide-react";
 
 // API base URL
@@ -58,14 +58,14 @@ interface ExamData {
 
 // Label pelanggaran dalam Bahasa Indonesia
 const violationLabels: Record<string, string> = {
-	"face_absence": "Wajah Tidak Terdeteksi",
-	"head_pose": "Menoleh",
-	"eye_gaze": "Mata Melihat Lain",
-	"object_detected": "HP Terdeteksi",
-	"phone_detected": "HP Terdeteksi",
-	"multi_face": "Banyak Wajah",
-	"tab_switch": "Ganti Tab",
-	"window_blur": "Ganti Jendela",
+	face_absence: "Wajah Tidak Terdeteksi",
+	head_pose: "Menoleh",
+	eye_gaze: "Mata Melihat Lain",
+	object_detected: "HP Terdeteksi",
+	phone_detected: "HP Terdeteksi",
+	multi_face: "Banyak Wajah",
+	tab_switch: "Ganti Tab",
+	window_blur: "Ganti Jendela",
 };
 
 interface ProctoringState {
@@ -131,7 +131,10 @@ export default function ExamDetailPage() {
 
 				// Transform examQuestions to questions array
 				const questions: Question[] = [];
-				if (examRaw.examQuestions && Array.isArray(examRaw.examQuestions)) {
+				if (
+					examRaw.examQuestions &&
+					Array.isArray(examRaw.examQuestions)
+				) {
 					examRaw.examQuestions.forEach((eq: any) => {
 						if (eq.question) {
 							questions.push({
@@ -173,7 +176,9 @@ export default function ExamDetailPage() {
 	};
 
 	// Calculate status based on score
-	const getStatusFromScore = (score: number): "normal" | "warning" | "danger" => {
+	const getStatusFromScore = (
+		score: number,
+	): "normal" | "warning" | "danger" => {
 		if (score >= 70) return "danger";
 		if (score >= 30) return "warning";
 		return "normal";
@@ -184,44 +189,56 @@ export default function ExamDetailPage() {
 		if (!user || !examData) return;
 
 		// Cheating detection service URL (Cloud Run)
-		const CHEATING_DETECTION_URL = process.env.NEXT_PUBLIC_PROCTORING_WS_URL?.replace("wss://", "https://").replace("ws://", "http://") 
-			|| "https://cheating-detection-865275048150.asia-southeast2.run.app";
+		const CHEATING_DETECTION_URL =
+			process.env.NEXT_PUBLIC_PROCTORING_WS_URL?.replace(
+				"wss://",
+				"https://",
+			).replace("ws://", "http://") ||
+			"https://cheating-detection-865275048150.asia-southeast2.run.app";
 
 		try {
 			// Create session on Cloud Run cheating detection service
-			const response = await fetch(`${CHEATING_DETECTION_URL}/api/sessions/start`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
+			const response = await fetch(
+				`${CHEATING_DETECTION_URL}/api/sessions/start`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						student_id: user.id,
+						exam_id: examData.id,
+						student_name: user.name,
+						exam_name: examData.title,
+					}),
 				},
-				body: JSON.stringify({
-					student_id: user.id,
-					exam_id: examData.id,
-					student_name: user.name,
-					exam_name: examData.title,
-				}),
-			});
+			);
 
 			if (!response.ok) {
-				throw new Error("Failed to start proctoring session on Cloud Run");
+				throw new Error(
+					"Failed to start proctoring session on Cloud Run",
+				);
 			}
 
 			const result = await response.json();
 			const sessionId = result.session_id;
-			
-			console.log("[Proctoring] Session created on Cloud Run:", sessionId);
+
+			console.log(
+				"[Proctoring] Session created on Cloud Run:",
+				sessionId,
+			);
 
 			// Connect to WebSocket
 			const socket = new StudentProctoringSocket(
 				sessionId,
 				handleProctoringMessage,
 				handleProctoringError,
-				handleProctoringClose
+				handleProctoringClose,
 			);
 			socket.connect();
 			proctoringSocketRef.current = socket;
 
-			setProctoring(prev => ({
+			setProctoring((prev) => ({
 				...prev,
 				sessionId,
 				isConnected: true,
@@ -236,7 +253,6 @@ export default function ExamDetailPage() {
 				title: "Proctoring Aktif",
 				description: "Kamera sedang dipantau oleh sistem AI",
 			});
-
 		} catch (error) {
 			console.error("Failed to start proctoring:", error);
 			toast({
@@ -248,134 +264,164 @@ export default function ExamDetailPage() {
 	}, [user, examData, toast]);
 
 	// Handle proctoring messages
-	const handleProctoringMessage = useCallback((data: DetectionResult) => {
-		if (data.type === "result") {
-			const newScore = data.score || 0;
-			const newAlertLevel = getStatusFromScore(newScore);
+	const handleProctoringMessage = useCallback(
+		(data: DetectionResult) => {
+			if (data.type === "result") {
+				const newScore = data.score || 0;
+				const newAlertLevel = getStatusFromScore(newScore);
 
-			// Extract current violation from events
-			let currentViolation: string | null = null;
-			if (data.events && data.events.length > 0) {
-				const dangerEvent = data.events.find(e => e.level === "danger" || e.level === "warning");
-				if (dangerEvent) {
-					currentViolation = dangerEvent.type;
-				}
-			}
-
-			// Also check detections for violations
-			if (!currentViolation && data.detections) {
-				// Check for face absence
-				if (data.detections.face && !data.detections.face.present) {
-					currentViolation = "face_absence";
-				}
-				// Check for head pose (looking away)
-				else if (data.detections.head_pose?.is_suspicious) {
-					currentViolation = "head_pose";
-				}
-				// Check for eye gaze (looking away)
-				else if (data.detections.eye_gaze?.is_looking_away) {
-					currentViolation = "eye_gaze";
-				}
-				// Check for multiple faces
-				else if (data.detections.face && data.detections.face.count > 1) {
-					currentViolation = "multi_face";
-				}
-				// Check for forbidden objects (phone)
-				else if (data.detections.objects?.some(obj => obj.is_forbidden)) {
-					currentViolation = "object_detected";
-				}
-			}
-
-			// Extract detected objects (phones, etc.)
-			const detectedObjects: string[] = [];
-			if (data.detections?.objects) {
-				data.detections.objects.forEach(obj => {
-					if (obj.is_forbidden) {
-						detectedObjects.push(obj.label);
-					}
-				});
-			}
-
-			// Build events list - include events from server AND current violation
-			setProctoring(prev => {
-				let updatedEvents = [...prev.events];
-
-				// Add events from server response
+				// Extract current violation from events
+				let currentViolation: string | null = null;
 				if (data.events && data.events.length > 0) {
-					const newServerEvents = data.events.map(e => ({
-						type: e.type,
-						level: e.level,
-						timestamp: new Date(),
-					}));
-					updatedEvents = [...newServerEvents, ...updatedEvents];
-				}
-
-				// If there's a current violation detected, add it to events if not already present
-				if (currentViolation) {
-					const violationExists = updatedEvents.some(
-						e => e.type === currentViolation &&
-						(new Date().getTime() - e.timestamp.getTime()) < 1000
+					const dangerEvent = data.events.find(
+						(e) => e.level === "danger" || e.level === "warning",
 					);
-
-					if (!violationExists) {
-						const level = newAlertLevel === "danger" ? "danger" : newAlertLevel === "warning" ? "warning" : "info";
-						updatedEvents = [
-							{ type: currentViolation, level, timestamp: new Date() },
-							...updatedEvents
-						];
+					if (dangerEvent) {
+						currentViolation = dangerEvent.type;
 					}
 				}
 
-				// Keep only last 10 events
-				updatedEvents = updatedEvents.slice(0, 10);
-
-				return {
-					...prev,
-					score: newScore,
-					alertLevel: newAlertLevel,
-					currentViolation,
-					annotatedFrame: data.annotated_frame || null,
-					detectedObjects,
-					events: updatedEvents,
-				};
-			});
-
-			// Clear violation after 3 seconds
-			if (currentViolation) {
-				if (violationTimeoutRef.current) {
-					clearTimeout(violationTimeoutRef.current);
+				// Also check detections for violations
+				if (!currentViolation && data.detections) {
+					// Check for face absence
+					if (data.detections.face && !data.detections.face.present) {
+						currentViolation = "face_absence";
+					}
+					// Check for head pose (looking away)
+					else if (data.detections.head_pose?.is_suspicious) {
+						currentViolation = "head_pose";
+					}
+					// Check for eye gaze (looking away)
+					else if (data.detections.eye_gaze?.is_looking_away) {
+						currentViolation = "eye_gaze";
+					}
+					// Check for multiple faces
+					else if (
+						data.detections.face &&
+						data.detections.face.count > 1
+					) {
+						currentViolation = "multi_face";
+					}
+					// Check for forbidden objects (phone)
+					else if (
+						data.detections.objects?.some((obj) => obj.is_forbidden)
+					) {
+						currentViolation = "object_detected";
+					}
 				}
-				violationTimeoutRef.current = setTimeout(() => {
-					setProctoring(prev => ({ ...prev, currentViolation: null }));
-				}, 3000);
-			}
 
-			// Show warning toast for suspicious activity
-			if (newAlertLevel === "danger" && data.alert_level === "danger") {
-				toast({
-					title: "Aktivitas Mencurigakan Terdeteksi!",
-					description: "Sistem mendeteksi perilaku yang tidak wajar",
-					variant: "destructive",
+				// Extract detected objects (phones, etc.)
+				const detectedObjects: string[] = [];
+				if (data.detections?.objects) {
+					data.detections.objects.forEach((obj) => {
+						if (obj.is_forbidden) {
+							detectedObjects.push(obj.label);
+						}
+					});
+				}
+
+				// Build events list - include events from server AND current violation
+				setProctoring((prev) => {
+					let updatedEvents = [...prev.events];
+
+					// Add events from server response
+					if (data.events && data.events.length > 0) {
+						const newServerEvents = data.events.map((e) => ({
+							type: e.type,
+							level: e.level,
+							timestamp: new Date(),
+						}));
+						updatedEvents = [...newServerEvents, ...updatedEvents];
+					}
+
+					// If there's a current violation detected, add it to events if not already present
+					if (currentViolation) {
+						const violationExists = updatedEvents.some(
+							(e) =>
+								e.type === currentViolation &&
+								new Date().getTime() - e.timestamp.getTime() <
+									1000,
+						);
+
+						if (!violationExists) {
+							const level =
+								newAlertLevel === "danger"
+									? "danger"
+									: newAlertLevel === "warning"
+										? "warning"
+										: "info";
+							updatedEvents = [
+								{
+									type: currentViolation,
+									level,
+									timestamp: new Date(),
+								},
+								...updatedEvents,
+							];
+						}
+					}
+
+					// Keep only last 10 events
+					updatedEvents = updatedEvents.slice(0, 10);
+
+					return {
+						...prev,
+						score: newScore,
+						alertLevel: newAlertLevel,
+						currentViolation,
+						annotatedFrame: data.annotated_frame || null,
+						detectedObjects,
+						events: updatedEvents,
+					};
 				});
+
+				// Clear violation after 3 seconds
+				if (currentViolation) {
+					if (violationTimeoutRef.current) {
+						clearTimeout(violationTimeoutRef.current);
+					}
+					violationTimeoutRef.current = setTimeout(() => {
+						setProctoring((prev) => ({
+							...prev,
+							currentViolation: null,
+						}));
+					}, 3000);
+				}
+
+				// Show warning toast for suspicious activity
+				if (
+					newAlertLevel === "danger" &&
+					data.alert_level === "danger"
+				) {
+					toast({
+						title: "Aktivitas Mencurigakan Terdeteksi!",
+						description:
+							"Sistem mendeteksi perilaku yang tidak wajar",
+						variant: "destructive",
+					});
+				}
+			} else if (data.type === "connected") {
+				setProctoring((prev) => ({ ...prev, isConnected: true }));
 			}
-		} else if (data.type === "connected") {
-			setProctoring(prev => ({ ...prev, isConnected: true }));
-		}
-	}, [toast]);
+		},
+		[toast],
+	);
 
 	const handleProctoringError = useCallback((error: Event) => {
 		console.error("Proctoring error:", error);
-		setProctoring(prev => ({ ...prev, isConnected: false }));
+		setProctoring((prev) => ({ ...prev, isConnected: false }));
 	}, []);
 
 	const handleProctoringClose = useCallback((event: CloseEvent) => {
 		console.log("Proctoring closed:", event);
-		setProctoring(prev => ({ ...prev, isConnected: false }));
+		setProctoring((prev) => ({ ...prev, isConnected: false }));
 	}, []);
 
 	// Capture webcam frame and send to proctoring service
 	const captureAndSendFrame = useCallback(() => {
-		const webcam = cameraExpanded ? expandedWebcamRef.current : webcamRef.current;
+		const webcam = cameraExpanded
+			? expandedWebcamRef.current
+			: webcamRef.current;
 		if (webcam && proctoringSocketRef.current?.isConnected()) {
 			const imageSrc = webcam.getScreenshot();
 			if (imageSrc) {
@@ -395,12 +441,16 @@ export default function ExamDetailPage() {
 				});
 
 				// Add to local events list
-				setProctoring(prev => ({
+				setProctoring((prev) => ({
 					...prev,
 					events: [
-						{ type: "tab_switch", level: "danger", timestamp: new Date() },
-						...prev.events
-					].slice(0, 10)
+						{
+							type: "tab_switch",
+							level: "danger",
+							timestamp: new Date(),
+						},
+						...prev.events,
+					].slice(0, 10),
 				}));
 
 				toast({
@@ -418,12 +468,16 @@ export default function ExamDetailPage() {
 				});
 
 				// Add to local events list
-				setProctoring(prev => ({
+				setProctoring((prev) => ({
 					...prev,
 					events: [
-						{ type: "window_blur", level: "warning", timestamp: new Date() },
-						...prev.events
-					].slice(0, 10)
+						{
+							type: "window_blur",
+							level: "warning",
+							timestamp: new Date(),
+						},
+						...prev.events,
+					].slice(0, 10),
 				}));
 			}
 		};
@@ -432,7 +486,10 @@ export default function ExamDetailPage() {
 		window.addEventListener("blur", handleBlur);
 
 		return () => {
-			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			document.removeEventListener(
+				"visibilitychange",
+				handleVisibilityChange,
+			);
 			window.removeEventListener("blur", handleBlur);
 		};
 	}, [examStarted, toast]);
@@ -482,10 +539,12 @@ export default function ExamDetailPage() {
 
 		try {
 			// Submit all answers in batch
-			const answersArray = Object.entries(answers).map(([questionId, answerText]) => ({
-				questionId,
-				answerText,
-			}));
+			const answersArray = Object.entries(answers).map(
+				([questionId, answerText]) => ({
+					questionId,
+					answerText,
+				}),
+			);
 
 			await api.post(`/exams/${examId}/submit-batch`, {
 				answers: answersArray,
@@ -497,11 +556,18 @@ export default function ExamDetailPage() {
 			// End proctoring session on Cloud Run
 			if (proctoring.sessionId) {
 				try {
-					const CHEATING_DETECTION_URL = process.env.NEXT_PUBLIC_PROCTORING_WS_URL?.replace("wss://", "https://").replace("ws://", "http://") 
-						|| "https://cheating-detection-865275048150.asia-southeast2.run.app";
-					await fetch(`${CHEATING_DETECTION_URL}/api/sessions/${proctoring.sessionId}/end`, {
-						method: "POST",
-					});
+					const CHEATING_DETECTION_URL =
+						process.env.NEXT_PUBLIC_PROCTORING_WS_URL?.replace(
+							"wss://",
+							"https://",
+						).replace("ws://", "http://") ||
+						"https://cheating-detection-865275048150.asia-southeast2.run.app";
+					await fetch(
+						`${CHEATING_DETECTION_URL}/api/sessions/${proctoring.sessionId}/end`,
+						{
+							method: "POST",
+						},
+					);
 				} catch (error) {
 					console.error("Failed to end proctoring session:", error);
 				}
@@ -552,8 +618,12 @@ export default function ExamDetailPage() {
 			<div className="flex items-center justify-center min-h-[calc(100vh-100px)]">
 				<Card>
 					<CardContent className="p-8 text-center">
-						<h3 className="text-lg font-semibold mb-2">Ujian Tidak Ditemukan</h3>
-						<p className="text-muted-foreground mb-4">Ujian yang Anda cari tidak tersedia.</p>
+						<h3 className="text-lg font-semibold mb-2">
+							Ujian Tidak Ditemukan
+						</h3>
+						<p className="text-muted-foreground mb-4">
+							Ujian yang Anda cari tidak tersedia.
+						</p>
 						<Button onClick={() => router.push("/exams")}>
 							Kembali ke Daftar Ujian
 						</Button>
@@ -570,7 +640,9 @@ export default function ExamDetailPage() {
 				<Card className="w-full max-w-lg">
 					<CardContent className="p-8 space-y-6">
 						<div className="text-center">
-							<h2 className="text-2xl font-bold mb-2">{examData.title}</h2>
+							<h2 className="text-2xl font-bold mb-2">
+								{examData.title}
+							</h2>
 							{examData.description && (
 								<p className="text-muted-foreground mb-4">
 									{examData.description}
@@ -578,7 +650,8 @@ export default function ExamDetailPage() {
 							)}
 							<p className="text-sm text-muted-foreground">
 								{examData.questions.length} Soal
-								{examData.duration && ` • ${examData.duration} Menit`}
+								{examData.duration &&
+									` • ${examData.duration} Menit`}
 							</p>
 						</div>
 
@@ -601,7 +674,9 @@ export default function ExamDetailPage() {
 									<li>Kamera akan merekam selama ujian</li>
 									<li>Jangan berpindah tab</li>
 									<li>Pastikan wajah terlihat jelas</li>
-									<li>Jangan bawa HP atau barang terlarang</li>
+									<li>
+										Jangan bawa HP atau barang terlarang
+									</li>
 								</ul>
 							</div>
 						</div>
@@ -675,11 +750,15 @@ export default function ExamDetailPage() {
 								{examData.title}
 							</h2>
 							<p className="text-sm text-muted-foreground">
-								Soal {currentQuestion + 1} dari {examData.questions.length}
+								Soal {currentQuestion + 1} dari{" "}
+								{examData.questions.length}
 							</p>
 						</div>
 						{examData.duration && (
-							<ExamTimer durationMinutes={examData.duration} onTimeUp={handleSubmit} />
+							<ExamTimer
+								durationMinutes={examData.duration}
+								onTimeUp={handleSubmit}
+							/>
 						)}
 					</div>
 
@@ -689,36 +768,43 @@ export default function ExamDetailPage() {
 								{currentQuestionData.question}
 							</h3>
 
-							{currentQuestionData.type === "PG" && currentQuestionData.options ? (
+							{currentQuestionData.type === "PG" &&
+							currentQuestionData.options ? (
 								<RadioGroup
-									value={answers[currentQuestionData.id] || ""}
+									value={
+										answers[currentQuestionData.id] || ""
+									}
 									onValueChange={handleAnswer}
 									className="space-y-4"
 								>
-									{Object.entries(currentQuestionData.options).map(
-										([key, value]) => (
-											<div
-												key={key}
-												className="flex items-center space-x-2 border p-4 rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+									{Object.entries(
+										currentQuestionData.options,
+									).map(([key, value]) => (
+										<div
+											key={key}
+											className="flex items-center space-x-2 border p-4 rounded-md hover:bg-muted/50 cursor-pointer transition-colors"
+										>
+											<RadioGroupItem
+												value={key}
+												id={`opt-${key}`}
+											/>
+											<Label
+												htmlFor={`opt-${key}`}
+												className="flex-1 cursor-pointer"
 											>
-												<RadioGroupItem
-													value={value}
-													id={`opt-${key}`}
-												/>
-												<Label
-													htmlFor={`opt-${key}`}
-													className="flex-1 cursor-pointer"
-												>
-													{key}. {value}
-												</Label>
-											</div>
-										),
-									)}
+												{key}. {value}
+											</Label>
+										</div>
+									))}
 								</RadioGroup>
 							) : (
 								<textarea
-									value={answers[currentQuestionData.id] || ""}
-									onChange={(e) => handleAnswer(e.target.value)}
+									value={
+										answers[currentQuestionData.id] || ""
+									}
+									onChange={(e) =>
+										handleAnswer(e.target.value)
+									}
 									className="w-full min-h-[200px] p-4 border rounded-md"
 									placeholder="Tulis jawaban Anda di sini..."
 								/>
@@ -730,7 +816,9 @@ export default function ExamDetailPage() {
 						<Button
 							variant="outline"
 							disabled={currentQuestion === 0}
-							onClick={() => setCurrentQuestion((prev) => prev - 1)}
+							onClick={() =>
+								setCurrentQuestion((prev) => prev - 1)
+							}
 						>
 							Sebelumnya
 						</Button>
@@ -782,9 +870,13 @@ export default function ExamDetailPage() {
 
 							{/* Status-based border */}
 							{!hasViolation && currentStatus !== "normal" && (
-								<div className={`absolute inset-0 border-2 pointer-events-none ${
-									currentStatus === "danger" ? "border-red-500/50" : "border-yellow-500/50"
-								}`} />
+								<div
+									className={`absolute inset-0 border-2 pointer-events-none ${
+										currentStatus === "danger"
+											? "border-red-500/50"
+											: "border-yellow-500/50"
+									}`}
+								/>
 							)}
 
 							{/* REC indicator */}
@@ -795,7 +887,10 @@ export default function ExamDetailPage() {
 							{/* Violation Label - Bottom Left */}
 							{proctoring.currentViolation && (
 								<div className="absolute bottom-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded font-bold animate-pulse flex items-center gap-1">
-									⚠️ {getViolationLabel(proctoring.currentViolation)}
+									⚠️{" "}
+									{getViolationLabel(
+										proctoring.currentViolation,
+									)}
 								</div>
 							)}
 
@@ -825,15 +920,24 @@ export default function ExamDetailPage() {
 						</div>
 						<div className="p-3 bg-muted/30 space-y-2">
 							<div className="flex items-center justify-between">
-								<span className="text-xs text-muted-foreground">Status:</span>
+								<span className="text-xs text-muted-foreground">
+									Status:
+								</span>
 								{getAlertBadge()}
 							</div>
 							<div className="flex items-center justify-between">
-								<span className="text-xs text-muted-foreground">Skor Pelanggaran:</span>
-								<span className={`text-sm font-bold ${
-									proctoring.score >= 70 ? "text-red-500" :
-									proctoring.score >= 30 ? "text-yellow-500" : "text-green-500"
-								}`}>
+								<span className="text-xs text-muted-foreground">
+									Skor Pelanggaran:
+								</span>
+								<span
+									className={`text-sm font-bold ${
+										proctoring.score >= 70
+											? "text-red-500"
+											: proctoring.score >= 30
+												? "text-yellow-500"
+												: "text-green-500"
+									}`}
+								>
 									{proctoring.score}/100
 								</span>
 							</div>
@@ -870,20 +974,27 @@ export default function ExamDetailPage() {
 					{proctoring.events.length > 0 && (
 						<Card>
 							<CardContent className="p-4">
-								<h4 className="text-sm font-medium mb-2">Aktivitas Terakhir</h4>
+								<h4 className="text-sm font-medium mb-2">
+									Aktivitas Terakhir
+								</h4>
 								<div className="space-y-1 max-h-32 overflow-y-auto">
-									{proctoring.events.slice(0, 5).map((event, i) => (
-										<div
-											key={i}
-											className={`text-xs p-2 rounded ${
-												event.level === "danger" ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400" :
-												event.level === "warning" ? "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400" :
-												"bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-											}`}
-										>
-											{getViolationLabel(event.type)}
-										</div>
-									))}
+									{proctoring.events
+										.slice(0, 5)
+										.map((event, i) => (
+											<div
+												key={i}
+												className={`text-xs p-2 rounded ${
+													event.level === "danger"
+														? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+														: event.level ===
+															  "warning"
+															? "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400"
+															: "bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+												}`}
+											>
+												{getViolationLabel(event.type)}
+											</div>
+										))}
 								</div>
 							</CardContent>
 						</Card>
@@ -899,10 +1010,15 @@ export default function ExamDetailPage() {
 							<span>Tampilan Kamera</span>
 							<div className="flex items-center gap-2">
 								{getAlertBadge()}
-								<span className={`text-sm font-bold ${
-									proctoring.score >= 70 ? "text-red-500" :
-									proctoring.score >= 30 ? "text-yellow-500" : "text-green-500"
-								}`}>
+								<span
+									className={`text-sm font-bold ${
+										proctoring.score >= 70
+											? "text-red-500"
+											: proctoring.score >= 30
+												? "text-yellow-500"
+												: "text-green-500"
+									}`}
+								>
 									Skor: {proctoring.score}/100
 								</span>
 							</div>
@@ -917,7 +1033,6 @@ export default function ExamDetailPage() {
 							mirrored
 						/>
 
-
 						{/* Violation border overlay */}
 						{hasViolation && (
 							<div className="absolute inset-0 border-4 border-red-500 animate-pulse pointer-events-none" />
@@ -925,9 +1040,13 @@ export default function ExamDetailPage() {
 
 						{/* Status-based border */}
 						{!hasViolation && currentStatus !== "normal" && (
-							<div className={`absolute inset-0 border-2 pointer-events-none ${
-								currentStatus === "danger" ? "border-red-500/50" : "border-yellow-500/50"
-							}`} />
+							<div
+								className={`absolute inset-0 border-2 pointer-events-none ${
+									currentStatus === "danger"
+										? "border-red-500/50"
+										: "border-yellow-500/50"
+								}`}
+							/>
 						)}
 
 						{/* REC indicator */}
@@ -938,7 +1057,8 @@ export default function ExamDetailPage() {
 						{/* Violation Label - Bottom Left */}
 						{proctoring.currentViolation && (
 							<div className="absolute bottom-2 left-2 bg-red-600 text-white text-sm px-3 py-1.5 rounded font-bold animate-pulse flex items-center gap-1">
-								⚠️ {getViolationLabel(proctoring.currentViolation)}
+								⚠️{" "}
+								{getViolationLabel(proctoring.currentViolation)}
 							</div>
 						)}
 
