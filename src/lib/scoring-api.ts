@@ -5,7 +5,7 @@ export interface ExamListItem {
 	id: string;
 	title: string;
 	description?: string;
-	status: "DRAFT" | "ONGOING" | "FINISHED";
+	status: "DRAFT" | "ONGOING" | "FINISHED" | "PUBLISHED";
 	startTime?: string;
 	endTime?: string;
 	duration?: number;
