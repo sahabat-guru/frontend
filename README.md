@@ -1,4 +1,4 @@
-# Frontend
+# SahabatGuru Frontend
 
 https://sahabat-guru.vercel.app/
 
