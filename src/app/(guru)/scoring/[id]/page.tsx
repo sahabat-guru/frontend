@@ -485,6 +485,59 @@ export default function ExamReviewPage() {
 										<div className="text-lg font-medium text-slate-800">
 											{currentAnswer.answerText || "-"}
 										</div>
+									) : currentAnswer.answerFileUrl ? (
+										<div className="space-y-4">
+											{/* Display the image */}
+											<div className="relative">
+												<img
+													src={
+														currentAnswer.answerFileUrl
+													}
+													alt="Jawaban siswa"
+													className="max-w-full h-auto rounded-lg border shadow-sm"
+												/>
+												<a
+													href={
+														currentAnswer.answerFileUrl
+													}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="absolute top-2 right-2 bg-white/80 hover:bg-white px-2 py-1 rounded text-xs text-sky-600 border"
+												>
+													Lihat penuh ↗
+												</a>
+											</div>
+											{/* Show extracted text from OCR if available */}
+											{(() => {
+												try {
+													const fb =
+														currentAnswer.feedback
+															? JSON.parse(
+																	currentAnswer.feedback,
+																)
+															: null;
+													if (fb?.extracted_text) {
+														return (
+															<div className="bg-white rounded-lg p-4 border">
+																<div className="text-xs text-slate-500 mb-2 font-medium">
+																	📝 Teks yang
+																	diekstrak
+																	(OCR):
+																</div>
+																<p className="text-slate-700 whitespace-pre-wrap text-sm">
+																	{
+																		fb.extracted_text
+																	}
+																</p>
+															</div>
+														);
+													}
+													return null;
+												} catch {
+													return null;
+												}
+											})()}
+										</div>
 									) : (
 										<p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
 											{currentAnswer.answerText ||

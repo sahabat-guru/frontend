@@ -53,6 +53,7 @@ export interface AIFeedback {
 	rubric_breakdown?: Record<string, number>;
 	total_points?: number;
 	max_points?: number;
+	extracted_text?: string; // OCR extracted text for image-based answers
 }
 
 export interface AnswerDetail {
