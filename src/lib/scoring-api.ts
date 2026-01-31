@@ -173,6 +173,46 @@ export const scoringApi = {
 		}>(`/exams/${examId}`);
 		return response.data.data;
 	},
+
+	// Update exam status
+	async updateExamStatus(
+		examId: string,
+		status: "DRAFT" | "ONGOING" | "FINISHED" | "PUBLISHED",
+	) {
+		const response = await api.patch<{
+			success: boolean;
+			data: ExamListItem;
+		}>(`/exams/${examId}/status`, { status });
+		return response.data.data;
+	},
+
+	// Update exam details
+	async updateExam(
+		examId: string,
+		data: {
+			title?: string;
+			description?: string;
+			startTime?: string | null;
+			endTime?: string | null;
+			duration?: number | null;
+			settings?: Record<string, unknown>;
+		},
+	) {
+		const response = await api.put<{
+			success: boolean;
+			data: ExamListItem;
+		}>(`/exams/${examId}`, data);
+		return response.data.data;
+	},
+
+	// Create exam from material
+	async createExamFromMaterial(materialId: string) {
+		const response = await api.post<{
+			success: boolean;
+			data: ExamListItem;
+		}>(`/materials/${materialId}/create-exam`);
+		return response.data.data;
+	},
 };
 
 // Helper to parse feedback JSON

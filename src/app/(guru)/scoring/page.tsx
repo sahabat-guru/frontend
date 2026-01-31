@@ -16,6 +16,10 @@ import {
 	RefreshCw,
 	CheckCircle,
 	BarChart3,
+	Play,
+	Square,
+	Send,
+	Pencil,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -70,6 +74,7 @@ export default function ScoringPage() {
 	const [triggeredExams, setTriggeredExams] = useState<Set<string>>(
 		new Set(),
 	);
+	const [statusUpdating, setStatusUpdating] = useState<string | null>(null);
 
 	// Fetch exams
 	const fetchExams = useCallback(async () => {
@@ -130,8 +135,9 @@ export default function ScoringPage() {
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "FINISHED":
-			case "PUBLISHED":
-				return "bg-green-100 text-green-700 hover:bg-green-100/80 border-green-200";
+return "bg-green-100 text-green-700 hover:bg-green-100/80 border-green-200";
+case "PUBLISHED":
+return "bg-indigo-100 text-indigo-700 hover:bg-indigo-100/80 border-indigo-200";
 			case "ONGOING":
 				return "bg-amber-100 text-amber-700 hover:bg-amber-100/80 border-amber-200";
 			case "DRAFT":
@@ -218,6 +224,60 @@ export default function ScoringPage() {
 		{} as Record<string, number>,
 	);
 
+	// Handle status change
+	const handleStatusChange = async (
+		examId: string,
+		newStatus: "DRAFT" | "ONGOING" | "FINISHED" | "PUBLISHED",
+	) => {
+		setStatusUpdating(examId);
+		try {
+			await scoringApi.updateExamStatus(examId, newStatus);
+			await fetchExams();
+			toast({
+				title: "Status berhasil diubah",
+				description: `Ujian sekarang berstatus ${statusMap[newStatus]}`,
+			});
+		} catch (err) {
+			console.error("Failed to update status:", err);
+			toast({
+				title: "Gagal mengubah status",
+				description: "Terjadi kesalahan saat mengubah status ujian.",
+				variant: "destructive",
+			});
+		} finally {
+			setStatusUpdating(null);
+		}
+	};
+
+	// Get next status action for an exam
+	const getStatusAction = (exam: ExamListItem) => {
+		switch (exam.status) {
+			case "DRAFT":
+				return {
+					label: "Mulai Ujian",
+					nextStatus: "ONGOING" as const,
+					icon: Play,
+					className: "bg-green-500 hover:bg-green-600 text-white",
+				};
+			case "ONGOING":
+				return {
+					label: "Akhiri Ujian",
+					nextStatus: "FINISHED" as const,
+					icon: Square,
+					className: "bg-red-500 hover:bg-red-600 text-white",
+				};
+			case "FINISHED":
+				return {
+					label: "Publikasi",
+					nextStatus: "PUBLISHED" as const,
+					icon: Send,
+					className: "bg-indigo-500 hover:bg-indigo-600 text-white",
+				};
+			default:
+				return null;
+		}
+	};
+
 	return (
 		<div className="space-y-8">
 			{/* Header */}
@@ -294,6 +354,12 @@ export default function ScoringPage() {
 						className="data-[state=active]:bg-slate-100 data-[state=active]:text-slate-700 data-[state=active]:shadow-none rounded-full px-4 py-1.5 h-auto text-sm border border-transparent data-[state=active]:border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
 					>
 						Draft ({statusCounts.DRAFT || 0})
+					</TabsTrigger>
+					<TabsTrigger
+						value="published"
+						className="data-[state=active]:bg-indigo-100 data-[state=active]:text-indigo-700 data-[state=active]:shadow-none rounded-full px-4 py-1.5 h-auto text-sm border border-transparent data-[state=active]:border-indigo-200 bg-white text-slate-600 hover:bg-slate-50"
+					>
+						Dipublikasi ({statusCounts.PUBLISHED || 0})
 					</TabsTrigger>
 				</TabsList>
 			</Tabs>
@@ -431,7 +497,34 @@ export default function ScoringPage() {
 												<BarChart3 className="h-4 w-4 mr-2" />
 												Analytics
 											</Button>
-
+{/* Status Action Button */}
+{(() => {
+const action = getStatusAction(exam);
+if (!action) return null;
+const Icon = action.icon;
+return (
+<Button
+size="sm"
+className={action.className}
+onClick={() =>
+handleStatusChange(
+exam.id,
+action.nextStatus,
+)
+}
+disabled={
+statusUpdating === exam.id
+}
+>
+{statusUpdating === exam.id ? (
+<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+) : (
+<Icon className="h-4 w-4 mr-2" />
+)}
+{action.label}
+</Button>
+);
+})()}
 											{exam.status === "FINISHED" && (
 												<Button
 													size="sm"
