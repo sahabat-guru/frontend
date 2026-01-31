@@ -213,6 +213,35 @@ export const scoringApi = {
 		}>(`/materials/${materialId}/create-exam`);
 		return response.data.data;
 	},
+
+	// Get exam questions
+	async getExamQuestions(examId: string) {
+		const response = await api.get<{
+			success: boolean;
+			data: any;
+		}>(`/exams/${examId}`);
+		return response.data.data?.examQuestions || [];
+	},
+
+	// Update question
+	async updateQuestion(
+		questionId: string,
+		data: {
+			question?: string;
+			type?: "PG" | "ESSAY";
+			options?: Record<string, string>;
+			answerKey?: string;
+			rubric?: Record<string, number>;
+			difficulty?: string;
+			category?: string;
+		},
+	) {
+		const response = await api.put<{
+			success: boolean;
+			data: any;
+		}>(`/questions/${questionId}`, data);
+		return response.data.data;
+	},
 };
 
 // Helper to parse feedback JSON

@@ -14,6 +14,7 @@ import {
 	FileText,
 	Loader2,
 	ThumbsUp,
+	Edit2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -278,6 +279,21 @@ export default function ExamReviewPage() {
 						)}
 						{showAI ? "Hide AI" : "Show AI"}
 					</Button>
+
+					{/* Edit Questions Button - Only for DRAFT exams */}
+					{exam?.status === "DRAFT" && (
+						<Button
+							variant="outline"
+							size="sm"
+							className="gap-2 border-yellow-400 text-yellow-600 hover:bg-yellow-50"
+							onClick={() =>
+								router.push(`/scoring/${examId}/edit`)
+							}
+						>
+							<Edit2 className="h-4 w-4" />
+							Edit Soal
+						</Button>
+					)}
 				</div>
 			</header>
 
