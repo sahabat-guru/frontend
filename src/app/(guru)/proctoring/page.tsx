@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { CameraGrid } from "@/components/features/proctoring/CameraGrid";
-import { StudentData } from "@/components/features/proctoring/StudentCard";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,65 +10,150 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { AlertTriangle, Fingerprint, ScanFace } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+	AlertTriangle, 
+	Fingerprint, 
+	ScanFace, 
+	Wifi, 
+	WifiOff,
+	User,
+	AlertCircle,
+	CheckCircle,
+	Eye
+} from "lucide-react";
+import { 
+	TeacherProctoringSocket, 
+	StudentUpdate 
+} from "@/lib/proctoring-socket";
+import { cn } from "@/lib/utils";
 
-// Mock Data
-const MOCK_STUDENTS: StudentData[] = [
-	{ id: "1", name: "Ahmad Santoso", status: "safe", alerts: [] },
-	{
-		id: "2",
-		name: "Budi Pratama",
-		status: "warning",
-		alerts: ["Eye gaze away"],
-	},
-	{
-		id: "3",
-		name: "Citra Dewi",
-		status: "suspicious",
-		alerts: ["Multiple faces detected", "Phone detected"],
-	},
-	{ id: "4", name: "Dewi Lestari", status: "safe", alerts: [] },
-	{ id: "5", name: "Eko Prasetyo", status: "safe", alerts: [] },
-];
+// API base URL
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+type StudentStatus = "safe" | "warning" | "suspicious";
+
+interface ActiveStudent {
+	sessionId: string;
+	studentId: string;
+	studentName: string;
+	score: number;
+	alertLevel: string;
+	status: StudentStatus;
+	alerts: string[];
+	annotatedFrame?: string;
+	lastUpdate: Date;
+}
 
 export default function ProctoringPage() {
-	const [students, setStudents] = useState<StudentData[]>(MOCK_STUDENTS);
-	const [selectedExam, setSelectedExam] = useState("exam-1");
+	const [students, setStudents] = useState<ActiveStudent[]>([]);
+	const [selectedExam, setSelectedExam] = useState("exam-demo-001");
+	const [isConnected, setIsConnected] = useState(false);
+	const socketRef = useRef<TeacherProctoringSocket | null>(null);
 
+	// Handle student updates from WebSocket
+	const handleStudentUpdate = useCallback((data: StudentUpdate) => {
+		if (data.type === "initial_state" && data.active_sessions) {
+			// Set initial students from active sessions
+			const initialStudents = data.active_sessions.map(session => ({
+				sessionId: session.session_id,
+				studentId: session.student_id,
+				studentName: session.student_name || "Unknown Student",
+				score: session.current_score || 0,
+				alertLevel: "normal",
+				status: mapAlertToStatus("normal"),
+				alerts: [],
+				lastUpdate: new Date(session.started_at),
+			}));
+			setStudents(initialStudents);
+		} else if (data.type === "student_connected") {
+			// Add new student
+			setStudents(prev => {
+				// Check if already exists
+				if (prev.find(s => s.sessionId === data.session_id)) {
+					return prev;
+				}
+				return [...prev, {
+					sessionId: data.session_id || "",
+					studentId: data.student_id || "",
+					studentName: data.student_name || "Unknown Student",
+					score: 0,
+					alertLevel: "normal",
+					status: "safe",
+					alerts: [],
+					lastUpdate: new Date(),
+				}];
+			});
+		} else if (data.type === "student_disconnected") {
+			// Remove student
+			setStudents(prev => prev.filter(s => s.sessionId !== data.session_id));
+		} else if (data.type === "student_update") {
+			// Update existing student
+			setStudents(prev => prev.map(student => {
+				if (student.sessionId === data.session_id) {
+					const newAlerts = data.recent_events
+						?.filter(e => e.level !== "info")
+						.map(e => e.type.replace(/_/g, " ")) || [];
+					
+					return {
+						...student,
+						score: data.score || student.score,
+						alertLevel: data.alert_level || student.alertLevel,
+						status: mapAlertToStatus(data.alert_level || "normal"),
+						alerts: newAlerts.length > 0 ? newAlerts : student.alerts,
+						annotatedFrame: data.annotated_frame,
+						lastUpdate: new Date(),
+					};
+				}
+				return student;
+			}));
+		}
+	}, []);
+
+	const mapAlertToStatus = (alertLevel: string): StudentStatus => {
+		switch (alertLevel) {
+			case "danger": return "suspicious";
+			case "warning": return "warning";
+			default: return "safe";
+		}
+	};
+
+	// Connect to WebSocket when exam is selected
 	useEffect(() => {
-		// In a real implementation:
-		// const socket = getSocket();
-		// socket.connect();
-		// socket.emit('join-proctor', { examId: selectedExam });
-		// socket.on('student-update', (data) => { update student state });
+		// Disconnect previous connection
+		if (socketRef.current) {
+			socketRef.current.disconnect();
+		}
 
-		// Simulation of live updates
-		const interval = setInterval(() => {
-			setStudents((prev) =>
-				prev.map((s) => {
-					if (s.id === "2") {
-						// Toggle warning for demo
-						return {
-							...s,
-							status: s.status === "warning" ? "safe" : "warning",
-							alerts:
-								s.status === "warning"
-									? []
-									: ["Head pose deviation"],
-						};
-					}
-					return s;
-				}),
-			);
-		}, 5000);
+		// Connect to teacher WebSocket
+		const socket = new TeacherProctoringSocket(
+			selectedExam,
+			handleStudentUpdate,
+			() => setIsConnected(false),
+			() => setIsConnected(false)
+		);
+		socket.connect();
+		socketRef.current = socket;
+		setIsConnected(true);
 
-		return () => clearInterval(interval);
-	}, [selectedExam]);
+		return () => {
+			if (socketRef.current) {
+				socketRef.current.disconnect();
+			}
+		};
+	}, [selectedExam, handleStudentUpdate]);
 
 	const suspiciousCount = students.filter(
 		(s) => s.status === "suspicious",
 	).length;
 	const warningCount = students.filter((s) => s.status === "warning").length;
+
+	const statusColor = {
+		safe: "border-green-500/50 bg-green-500/5",
+		warning: "border-yellow-500/50 bg-yellow-500/5",
+		suspicious: "border-red-500/50 bg-red-500/5",
+	};
 
 	return (
 		<div className="space-y-6">
@@ -83,7 +166,20 @@ export default function ProctoringPage() {
 						Live AI monitoring for active exams.
 					</p>
 				</div>
-				<div className="flex gap-4">
+				<div className="flex gap-4 items-center">
+					<div className="flex items-center gap-2">
+						{isConnected ? (
+							<Badge className="bg-green-500 gap-1">
+								<Wifi className="h-3 w-3" />
+								Live Connected
+							</Badge>
+						) : (
+							<Badge variant="destructive" className="gap-1">
+								<WifiOff className="h-3 w-3" />
+								Disconnected
+							</Badge>
+						)}
+					</div>
 					<Select
 						value={selectedExam}
 						onValueChange={setSelectedExam}
@@ -92,10 +188,13 @@ export default function ProctoringPage() {
 							<SelectValue placeholder="Select Exam" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="exam-1">
+							<SelectItem value="exam-demo-001">
+								Ujian Pengetahuan Umum
+							</SelectItem>
+							<SelectItem value="exam-math-001">
 								Ujian Matematika (X-A)
 							</SelectItem>
-							<SelectItem value="exam-2">
+							<SelectItem value="exam-physics-001">
 								Ujian Fisika (XI-B)
 							</SelectItem>
 						</SelectContent>
@@ -155,7 +254,106 @@ export default function ProctoringPage() {
 				</Card>
 			</div>
 
-			<CameraGrid students={students} />
+			{/* Live Camera Grid */}
+			{students.length > 0 ? (
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					{students.map((student) => (
+						<Card
+							key={student.sessionId}
+							className={cn(
+								"overflow-hidden border-2 transition-all",
+								statusColor[student.status],
+							)}
+						>
+							<div className="relative aspect-video bg-muted flex items-center justify-center">
+								{student.annotatedFrame ? (
+									<img
+										src={student.annotatedFrame}
+										alt={student.studentName}
+										className="w-full h-full object-cover"
+									/>
+								) : (
+									<User className="h-12 w-12 text-muted-foreground/50" />
+								)}
+
+								<div className="absolute top-2 right-2">
+									<Badge
+										variant={
+											student.status === "suspicious" ? "destructive" :
+											student.status === "warning" ? "secondary" : "secondary"
+										}
+										className={cn(
+											student.status === "safe" &&
+												"bg-green-500 hover:bg-green-600 text-white",
+											student.status === "warning" &&
+												"bg-yellow-500 hover:bg-yellow-600 text-white",
+										)}
+									>
+										{student.status.toUpperCase()}
+									</Badge>
+								</div>
+
+								{/* Score indicator */}
+								<div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+									Score: {student.score}/100
+								</div>
+							</div>
+
+							<div className="p-3">
+								<div className="flex items-center justify-between mb-2">
+									<div className="flex items-center gap-2">
+										<Avatar className="h-6 w-6">
+											<AvatarFallback>{student.studentName[0]}</AvatarFallback>
+										</Avatar>
+										<span className="font-medium text-sm truncate">
+											{student.studentName}
+										</span>
+									</div>
+									{student.status === "safe" ? (
+										<CheckCircle className="h-4 w-4 text-green-500" />
+									) : (
+										<AlertCircle
+											className={cn(
+												"h-4 w-4",
+												student.status === "suspicious"
+													? "text-red-500"
+													: "text-yellow-500",
+											)}
+										/>
+									)}
+								</div>
+
+								<div className="space-y-1">
+									{student.alerts.length > 0 ? (
+										student.alerts.slice(0, 2).map((alert, i) => (
+											<div
+												key={i}
+												className="text-xs text-red-500 flex items-center gap-1"
+											>
+												<Eye className="h-3 w-3" /> {alert}
+											</div>
+										))
+									) : (
+										<div className="text-xs text-muted-foreground">
+											No active alerts
+										</div>
+									)}
+								</div>
+							</div>
+						</Card>
+					))}
+				</div>
+			) : (
+				<Card className="p-12">
+					<div className="text-center text-muted-foreground">
+						<User className="h-16 w-16 mx-auto mb-4 opacity-30" />
+						<h3 className="text-lg font-medium mb-2">Belum Ada Siswa</h3>
+						<p className="text-sm">
+							Menunggu siswa untuk bergabung dalam sesi ujian...
+						</p>
+					</div>
+				</Card>
+			)}
 		</div>
 	);
 }
