@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +47,7 @@ const JENIS_LKPD = [
 const MAPEL_OPTIONS = [
   "Matematika", "Fisika", "Kimia", "Biologi",
   "Bahasa Indonesia", "Bahasa Inggris", "Sejarah",
-  "Geografi", "Ekonomi", "Sosiologi", "PPKn",
+  "Geografi", "Ekonomi", "Sosiologi", "PPKN",
   "Seni Budaya", "Prakarya", "Informatika", "Pendidikan Agama"
 ];
 
@@ -98,17 +98,10 @@ export function LKPDGenerator({ onGenerate }: LKPDGeneratorProps) {
         fitur_tambahan: formData.fitur_tambahan
       };
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const response = await fetch(`${API_URL}/materials/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "LKPD", ...payload }),
-      });
+      const response = await api.post(`/materials/generate`, { type: "LKPD", ...payload });
 
-      if (!response.ok) throw new Error("Generation failed");
-
-      const data = await response.json();
-      onGenerate(data.data || data);
+      // Pass the data object which contains previewUrl
+      onGenerate(response.data.data || response.data);
       toast({ title: "Success", description: "LKPD berhasil dibuat!" });
     } catch (error) {
       console.error(error);
@@ -146,7 +139,7 @@ export function LKPDGenerator({ onGenerate }: LKPDGeneratorProps) {
         {/* Mapel & Kelas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Mata Pelajaran</Label>
+            <Label className="text-gray-700 font-medium">Mata Pelajaran <span className="text-red-500">*</span></Label>
             <Select
               value={formData.mata_pelajaran}
               onValueChange={(val) => handleChange("mata_pelajaran", val)}
@@ -162,7 +155,7 @@ export function LKPDGenerator({ onGenerate }: LKPDGeneratorProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Kelas</Label>
+            <Label className="text-gray-700 font-medium">Kelas <span className="text-red-500">*</span></Label>
             <Select value={formData.jenjang} onValueChange={(val) => handleChange("jenjang", val)}>
               <SelectTrigger className="bg-gray-50 border-gray-200">
                 <SelectValue placeholder="Pilih" />

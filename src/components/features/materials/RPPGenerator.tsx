@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,10 +69,10 @@ export function RPPGenerator({ onGenerate }: RPPGeneratorProps) {
 
   const handleGenerate = async () => {
     // Validation
-    if (!formData.topic || !formData.jenjang) {
+    if (!formData.topic || !formData.jenjang || !formData.mata_pelajaran) {
       toast({
         title: "Missing Information",
-        description: "Mohon isi Topik dan Kelas.",
+        description: "Mohon isi Topik, Mata Pelajaran, dan Kelas.",
         variant: "destructive",
       });
       return;
@@ -101,13 +101,13 @@ export function RPPGenerator({ onGenerate }: RPPGeneratorProps) {
         alokasi_waktu: formData.alokasi_waktu,
       };
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const response = await axios.post(
-        `${API_URL}/materials/generate`,
+      const response = await api.post(
+        `/materials/generate`,
         payload
       );
 
-      onGenerate?.(response.data);
+      // Pass the data object which contains previewUrl
+      onGenerate?.(response.data.data || response.data);
       toast({
         title: "Success",
         description: "RPP generated successfully!",
@@ -148,7 +148,7 @@ export function RPPGenerator({ onGenerate }: RPPGeneratorProps) {
         {/* Mata Pelajaran & Kelas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Mata Pelajaran</Label>
+            <Label className="text-gray-700 font-medium">Mata Pelajaran <span className="text-red-500">*</span></Label>
             <Select
               value={formData.mata_pelajaran}
               onValueChange={(val) => handleChange("mata_pelajaran", val)}
@@ -175,7 +175,7 @@ export function RPPGenerator({ onGenerate }: RPPGeneratorProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Kelas</Label>
+            <Label className="text-gray-700 font-medium">Kelas <span className="text-red-500">*</span></Label>
             <Select onValueChange={(val) => handleChange("jenjang", val)}>
               <SelectTrigger className="bg-gray-50 border-gray-200">
                 <SelectValue placeholder="Pilih" />
@@ -283,6 +283,7 @@ export function RPPGenerator({ onGenerate }: RPPGeneratorProps) {
             onChange={(e) =>
               handleChange("karakteristik_siswa", e.target.value)
             }
+            className="bg-gray-50 border-gray-200"
           />
         </div>
       </CardContent>

@@ -30,22 +30,28 @@ import {
 } from "lucide-react";
 
 export default function MaterialPage() {
-	const [result, setResult] = useState<any>(null);
+	// Separate result states for each generator type
+	const [rppResult, setRppResult] = useState<any>(null);
+	const [pptResult, setPptResult] = useState<any>(null);
+	const [soalResult, setSoalResult] = useState<any>(null);
+	const [lkpdResult, setLkpdResult] = useState<any>(null);
 	const [activeTab, setActiveTab] = useState("rpp");
 
-	const handleGenerate = (data: any) => {
-		setResult(data);
+	// Individual handlers for each generator
+	const handleRppGenerate = (data: any) => {
+		setRppResult(data);
 	};
 
-	// Mapping tab value to generator type for result display
-	const getGeneratorType = () => {
-		switch (activeTab) {
-			case "rpp": return "RPP";
-			case "ppt": return "PPT";
-			case "soal": return "QUESTIONS";
-			case "lkpd": return "LKPD";
-			default: return null;
-		}
+	const handlePptGenerate = (data: any) => {
+		setPptResult(data);
+	};
+
+	const handleSoalGenerate = (data: any) => {
+		setSoalResult(data);
+	};
+
+	const handleLkpdGenerate = (data: any) => {
+		setLkpdResult(data);
 	};
 
 	return (
@@ -112,16 +118,16 @@ export default function MaterialPage() {
 						</div>
 						<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 							<div className="h-full pr-2">
-								<RPPGenerator onGenerate={handleGenerate} />
+								<RPPGenerator onGenerate={handleRppGenerate} />
 							</div>
 							<div className="h-full overflow-hidden">
 								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
 									<CardHeader className="pb-2 bg-white shrink-0">
 										<CardTitle className="text-xl font-bold text-gray-800">Preview RPP</CardTitle>
-										<CardDescription className="text-gray-500">Hasil generate RPP/Modul Ajar</CardDescription>
+										<CardDescription className="text-gray-500">Preview hasil generate RPP/Modul Ajar</CardDescription>
 									</CardHeader>
 									<CardContent className="h-full p-0">
-										<GeneratedResult result={result} type="RPP" />
+										<GeneratedResult result={rppResult} type="RPP" />
 									</CardContent>
 								</Card>
 							</div>
@@ -138,16 +144,16 @@ export default function MaterialPage() {
 						</div>
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 							<div className="h-full pr-2 col-span-12 lg:col-span-4">
-								<PPTGenerator onGenerate={handleGenerate} />
+								<PPTGenerator onGenerate={handlePptGenerate} />
 							</div>
 							<div className="h-full overflow-hidden col-span-12 lg:col-span-8">
 								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
 									<CardHeader className="pb-2 bg-white shrink-0">
 										<CardTitle className="text-xl font-bold text-gray-800">Preview Slide</CardTitle>
-										<CardDescription className="text-gray-500">Belum ada slide</CardDescription>
+										<CardDescription className="text-gray-500">Preview hasil generate slide presentasi</CardDescription>
 									</CardHeader>
 									<CardContent className="h-full p-0">
-										<GeneratedResult result={result} type="PPT" />
+										<GeneratedResult result={pptResult} type="PPT" />
 									</CardContent>
 								</Card>
 							</div>
@@ -164,16 +170,16 @@ export default function MaterialPage() {
 						</div>
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 							<div className="h-full pr-2 col-span-12 lg:col-span-4">
-								<SoalGenerator onGenerate={handleGenerate} />
+								<SoalGenerator onGenerate={handleSoalGenerate} />
 							</div>
 							<div className="h-full overflow-hidden col-span-12 lg:col-span-8">
 								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
 									<CardHeader className="pb-2 bg-white shrink-0">
 										<CardTitle className="text-xl font-bold text-gray-800">Preview Soal</CardTitle>
-										<CardDescription className="text-gray-500">Belum ada soal</CardDescription>
+										<CardDescription className="text-gray-500">Preview hasil generate soal</CardDescription>
 									</CardHeader>
 									<CardContent className="h-full p-0">
-										<GeneratedResult result={result} type="QUESTIONS" />
+										<GeneratedResult result={soalResult} type="QUESTIONS" />
 									</CardContent>
 								</Card>
 							</div>
@@ -190,16 +196,16 @@ export default function MaterialPage() {
 						</div>
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 							<div className="h-full pr-2 col-span-12 lg:col-span-4">
-								<LKPDGenerator onGenerate={handleGenerate} />
+								<LKPDGenerator onGenerate={handleLkpdGenerate} />
 							</div>
 							<div className="h-full overflow-hidden col-span-12 lg:col-span-8">
 								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
 									<CardHeader className="pb-2 bg-white shrink-0">
 										<CardTitle className="text-xl font-bold text-gray-800">Preview LKPD</CardTitle>
-										<CardDescription className="text-gray-500">Belum ada konten</CardDescription>
+										<CardDescription className="text-gray-500">Preview hasil generate LKPD</CardDescription>
 									</CardHeader>
 									<CardContent className="h-full p-0">
-										<GeneratedResult result={result} type="LKPD" />
+										<GeneratedResult result={lkpdResult} type="LKPD" />
 									</CardContent>
 								</Card>
 							</div>

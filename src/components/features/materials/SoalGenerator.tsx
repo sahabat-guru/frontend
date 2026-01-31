@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +40,7 @@ interface SoalGeneratorProps {
 const MAPEL_OPTIONS = [
   "Matematika", "Fisika", "Kimia", "Biologi",
   "Bahasa Indonesia", "Bahasa Inggris", "Sejarah",
-  "Geografi", "Ekonomi", "Sosiologi", "PPKn",
+  "Geografi", "Ekonomi", "Sosiologi", "PPKN",
   "Seni Budaya", "Prakarya", "Informatika", "Pendidikan Agama"
 ];
 
@@ -124,16 +124,9 @@ export function SoalGenerator({ onGenerate }: SoalGeneratorProps) {
         include_hots: formData.include_hots,
       };
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-
-      const response = await axios.post(
-        `${API_URL}/materials/generate`,
-        { type: "QUESTIONS", ...payload } // Ensure type is included if backend relies on it for router, though user payload didn't show it explicitly in the snippet, it's safer to keep or check backend. Assuming user snippet JSON was the BODY for correct endpoint. 
-        // User said: "form field of what it needed in the backend request body" and showed the JSON. 
-        // My previous code wrapping: { type: "QUESTIONS", ...payload }.
-        // I will keep the wrapping as it's likely a unified endpoint based on previous context, but user provided strict body. 
-        // Wait, in previous steps I saw `body: JSON.stringify({ type: "LKPD", ...payload })` for LKPD.
-        // So I should include type: "QUESTIONS".
+      const response = await api.post(
+        `/materials/generate`,
+        { type: "QUESTIONS", ...payload }
       );
 
       // Adaptation: Check if response format is data.data or just data
@@ -180,7 +173,7 @@ export function SoalGenerator({ onGenerate }: SoalGeneratorProps) {
         {/* Mapel & Kelas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Mata Pelajaran</Label>
+            <Label className="text-gray-700 font-medium">Mata Pelajaran <span className="text-red-500">*</span></Label>
             <Select
               value={formData.mata_pelajaran}
               onValueChange={(val) => handleChange("mata_pelajaran", val)}
@@ -196,7 +189,7 @@ export function SoalGenerator({ onGenerate }: SoalGeneratorProps) {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Kelas</Label>
+            <Label className="text-gray-700 font-medium">Kelas <span className="text-red-500">*</span></Label>
             <Select value={formData.jenjang} onValueChange={(val) => handleChange("jenjang", val)}>
               <SelectTrigger className="bg-gray-50 border-gray-200">
                 <SelectValue placeholder="Pilih" />

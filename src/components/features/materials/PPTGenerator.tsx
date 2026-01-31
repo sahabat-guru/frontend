@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios"; // Keep axios for now, though fetch is used in the new handleGenerate
+import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,7 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
   const [formData, setFormData] = useState({
     topic: "",
     jenjang: "",
+    mata_pelajaran: "",
     template: "futuristic",
     kurikulum: "kurikulum_merdeka",
     detail_level: "lengkap",
@@ -52,10 +53,10 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
   };
 
   const handleGenerate = async () => {
-    if (!formData.topic) {
+    if (!formData.topic || !formData.jenjang || !formData.mata_pelajaran) {
       toast({
         title: "Validation Error",
-        description: "Mohon isi topik.",
+        description: "Mohon isi Topik, Mata Pelajaran, dan Kelas.",
         variant: "destructive",
       });
       return;
@@ -73,17 +74,10 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
         include_examples: formData.include_examples,
       };
 
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const response = await fetch(`${API_URL}/materials/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "PPT", ...payload }),
-      });
+      const response = await api.post(`/materials/generate`, { type: "PPT", ...payload });
 
-      if (!response.ok) throw new Error("Generation failed");
-
-      const data = await response.json();
-      onGenerate(data.data || data);
+      // Pass the data object which contains previewUrl
+      onGenerate(response.data.data || response.data);
       toast({ title: "Success", description: "Presentasi berhasil dibuat!" });
     } catch (error) {
       console.error(error);
@@ -118,30 +112,41 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
           />
         </div>
 
-        {/* Kurikulum & Jenjang */}
+        {/* Mata Pelajaran & Kelas */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Kurikulum</Label>
+            <Label className="text-gray-700 font-medium">Mata Pelajaran <span className="text-red-500">*</span></Label>
             <Select
-              value={formData.kurikulum}
-              onValueChange={(val) => handleChange("kurikulum", val)}
+              value={formData.mata_pelajaran}
+              onValueChange={(val) => handleChange("mata_pelajaran", val)}
             >
               <SelectTrigger className="bg-gray-50 border-gray-200">
-                <SelectValue placeholder="Pilih Kurikulum" />
+                <SelectValue placeholder="Pilih" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="kurikulum_merdeka">Kurikulum Merdeka</SelectItem>
-                <SelectItem value="kurikulum_2013">Kurikulum 2013</SelectItem>
-                <SelectItem value="cambridge">Cambridge</SelectItem>
-                <SelectItem value="international_baccalaureate">International Baccalaureate</SelectItem>
+              <SelectContent className="max-h-[200px]">
+                <SelectItem value="Matematika">Matematika</SelectItem>
+                <SelectItem value="Fisika">Fisika</SelectItem>
+                <SelectItem value="Kimia">Kimia</SelectItem>
+                <SelectItem value="Biologi">Biologi</SelectItem>
+                <SelectItem value="Bahasa Indonesia">Bahasa Indonesia</SelectItem>
+                <SelectItem value="Bahasa Inggris">Bahasa Inggris</SelectItem>
+                <SelectItem value="Sejarah">Sejarah</SelectItem>
+                <SelectItem value="Geografi">Geografi</SelectItem>
+                <SelectItem value="Ekonomi">Ekonomi</SelectItem>
+                <SelectItem value="Sosiologi">Sosiologi</SelectItem>
+                <SelectItem value="PPKN">PPKN</SelectItem>
+                <SelectItem value="Seni Budaya">Seni Budaya</SelectItem>
+                <SelectItem value="Prakarya">Prakarya</SelectItem>
+                <SelectItem value="Informatika">Informatika</SelectItem>
+                <SelectItem value="Pendidikan Agama">Pendidikan Agama</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
-            <Label className="text-gray-700 font-medium">Kelas</Label>
+            <Label className="text-gray-700 font-medium">Kelas <span className="text-red-500">*</span></Label>
             <Select value={formData.jenjang} onValueChange={(val) => handleChange("jenjang", val)}>
               <SelectTrigger className="bg-gray-50 border-gray-200">
-                <SelectValue placeholder="Pilih Kelas" />
+                <SelectValue placeholder="Pilih" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Kelas 1">Kelas 1</SelectItem>
@@ -159,6 +164,25 @@ export function PPTGenerator({ onGenerate }: PPTGeneratorProps) {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Kurikulum */}
+        <div className="space-y-2">
+          <Label className="text-gray-700 font-medium">Kurikulum</Label>
+          <Select
+            value={formData.kurikulum}
+            onValueChange={(val) => handleChange("kurikulum", val)}
+          >
+            <SelectTrigger className="bg-gray-50 border-gray-200">
+              <SelectValue placeholder="Pilih Kurikulum" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="kurikulum_merdeka">Kurikulum Merdeka</SelectItem>
+              <SelectItem value="kurikulum_2013">Kurikulum 2013</SelectItem>
+              <SelectItem value="cambridge">Cambridge</SelectItem>
+              <SelectItem value="international_baccalaureate">International Baccalaureate</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Detail Level */}
