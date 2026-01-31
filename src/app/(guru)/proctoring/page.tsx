@@ -67,17 +67,17 @@ const EVENT_ICONS: Record<string, string> = {
 	lip_movement: "💬",
 };
 
-// Event names mapping
+// Event names mapping (Indonesian)
 const EVENT_NAMES: Record<string, string> = {
-	head_pose: "Head Movement",
-	eye_gaze: "Looking Away",
-	face_absence: "Face Not Detected",
-	multiple_faces: "Multiple Faces",
-	object_detected: "Forbidden Object",
-	forbidden_object: "Forbidden Object",
-	tab_switch: "Tab Switch",
-	window_blur: "Window Lost Focus",
-	lip_movement: "Talking Detected",
+	head_pose: "Gerakan Kepala",
+	eye_gaze: "Melihat ke Samping",
+	face_absence: "Wajah Tidak Terdeteksi",
+	multiple_faces: "Beberapa Wajah",
+	object_detected: "Objek Terlarang",
+	forbidden_object: "Objek Terlarang",
+	tab_switch: "Pindah Tab",
+	window_blur: "Keluar Aplikasi",
+	lip_movement: "Berbicara",
 };
 
 export default function ProctoringPage() {
@@ -317,10 +317,10 @@ export default function ProctoringPage() {
 				<div>
 					<h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
 						<MonitorPlay className="h-8 w-8 text-primary" />
-						Smart Proctoring
+						Pengawasan Ujian
 					</h2>
 					<p className="text-muted-foreground">
-						Live AI monitoring for active exams with real-time camera feeds.
+						Pemantauan AI secara langsung untuk ujian aktif dengan kamera real-time.
 					</p>
 				</div>
 				<div className="flex gap-4 items-center">
@@ -329,17 +329,17 @@ export default function ProctoringPage() {
 						{isConnecting ? (
 							<Badge className="bg-yellow-500 gap-1">
 								<RefreshCw className="h-3 w-3 animate-spin" />
-								Connecting...
+								Menghubungkan...
 							</Badge>
 						) : isConnected ? (
 							<Badge className="bg-green-500 gap-1">
 								<Wifi className="h-3 w-3" />
-								Live Connected
+								Terhubung
 							</Badge>
 						) : (
 							<Badge variant="destructive" className="gap-1 cursor-pointer" onClick={handleReconnect}>
 								<WifiOff className="h-3 w-3" />
-								Disconnected - Click to Reconnect
+								Terputus - Klik untuk Sambungkan
 							</Badge>
 						)}
 					</div>
@@ -350,12 +350,12 @@ export default function ProctoringPage() {
 						onValueChange={setSelectedExam}
 					>
 						<SelectTrigger className="w-[280px]">
-							<SelectValue placeholder="Select Exam to Monitor" />
+							<SelectValue placeholder="Pilih Ujian untuk Dipantau" />
 						</SelectTrigger>
 						<SelectContent>
 							{exams.length === 0 ? (
 								<SelectItem value="none" disabled>
-									No active exams
+									Tidak ada ujian aktif
 								</SelectItem>
 							) : (
 								exams.map((exam) => (
@@ -371,7 +371,7 @@ export default function ProctoringPage() {
 					<Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "grid" | "focus")}>
 						<TabsList>
 							<TabsTrigger value="grid">Grid</TabsTrigger>
-							<TabsTrigger value="focus">Focus</TabsTrigger>
+							<TabsTrigger value="focus">Detail</TabsTrigger>
 						</TabsList>
 					</Tabs>
 				</div>
@@ -382,7 +382,7 @@ export default function ProctoringPage() {
 				<Card className="bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900">
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium text-red-600">
-							Suspicious Activity
+							Aktivitas Mencurigakan
 						</CardTitle>
 						<AlertTriangle className="h-4 w-4 text-red-600" />
 					</CardHeader>
@@ -391,7 +391,7 @@ export default function ProctoringPage() {
 							{suspiciousCount}
 						</div>
 						<p className="text-xs text-red-600/80">
-							Students flagged as high risk
+							Siswa ditandai berisiko tinggi
 						</p>
 					</CardContent>
 				</Card>
@@ -399,7 +399,7 @@ export default function ProctoringPage() {
 				<Card className="bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-900">
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium text-yellow-600">
-							Warnings
+							Peringatan
 						</CardTitle>
 						<ScanFace className="h-4 w-4 text-yellow-600" />
 					</CardHeader>
@@ -408,7 +408,7 @@ export default function ProctoringPage() {
 							{warningCount}
 						</div>
 						<p className="text-xs text-yellow-600/80">
-							Minor deviations detected
+							Penyimpangan minor terdeteksi
 						</p>
 					</CardContent>
 				</Card>
@@ -416,14 +416,14 @@ export default function ProctoringPage() {
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
-							Active Students
+							Siswa Aktif
 						</CardTitle>
 						<Users className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold">{activeCount}</div>
 						<p className="text-xs text-muted-foreground">
-							Currently in session
+							Sedang dalam sesi ujian
 						</p>
 					</CardContent>
 				</Card>
@@ -431,14 +431,14 @@ export default function ProctoringPage() {
 				<Card>
 					<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 						<CardTitle className="text-sm font-medium">
-							Exam Duration
+							Durasi Ujian
 						</CardTitle>
 						<Clock className="h-4 w-4 text-muted-foreground" />
 					</CardHeader>
 					<CardContent>
 						<div className="text-2xl font-bold font-mono">{examDuration}</div>
 						<p className="text-xs text-muted-foreground">
-							Time since monitoring started
+							Waktu sejak pemantauan dimulai
 						</p>
 					</CardContent>
 				</Card>
@@ -470,7 +470,7 @@ export default function ProctoringPage() {
 					{/* Student List Sidebar */}
 					<Card className="md:col-span-1">
 						<CardHeader>
-							<CardTitle className="text-sm font-medium">Students</CardTitle>
+							<CardTitle className="text-sm font-medium">Daftar Siswa</CardTitle>
 						</CardHeader>
 						<CardContent className="p-0">
 							<ScrollArea className="h-[500px]">
@@ -491,7 +491,7 @@ export default function ProctoringPage() {
 											</Avatar>
 											<div className="flex-1 min-w-0">
 												<p className="text-sm font-medium truncate">{student.studentName}</p>
-												<p className="text-xs text-muted-foreground">Score: {student.score}</p>
+												<p className="text-xs text-muted-foreground">Skor: {student.score}</p>
 											</div>
 											<StatusIndicator status={student.status} />
 										</div>
@@ -526,30 +526,30 @@ export default function ProctoringPage() {
 												selectedStudent.status === "warning" && "bg-yellow-500 hover:bg-yellow-600 text-white",
 											)}
 										>
-											{selectedStudent.status.toUpperCase()}
+											{selectedStudent.status === "safe" ? "AMAN" : selectedStudent.status === "warning" ? "PERINGATAN" : "MENCURIGAKAN"}
 										</Badge>
-										<Badge variant="outline">Score: {selectedStudent.score}/100</Badge>
+										<Badge variant="outline">Skor: {selectedStudent.score}/100</Badge>
 									</div>
 								</CardHeader>
 								<CardContent className="space-y-4">
-									{/* Large Video Feed */}
-									<div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+									{/* Video Feed */}
+									<div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center max-w-2xl mx-auto">
 										{selectedStudent.annotatedFrame ? (
 											<img
 												src={`data:image/jpeg;base64,${selectedStudent.annotatedFrame}`}
 												alt={selectedStudent.studentName}
-												className="w-full h-full object-cover"
+												className="w-full h-full object-contain"
 											/>
 										) : (
 											<div className="flex flex-col items-center gap-2 text-muted-foreground">
 												<VideoOff className="h-16 w-16" />
-												<p>Waiting for camera feed...</p>
+												<p>Menunggu feed kamera...</p>
 											</div>
 										)}
 										{/* Overlay badges */}
 										<div className="absolute top-3 right-3 flex items-center gap-2">
 											{selectedStudent.connected ? (
-												<Badge className="bg-green-500/90"><Activity className="h-3 w-3 mr-1" /> Live</Badge>
+												<Badge className="bg-green-500/90"><Activity className="h-3 w-3 mr-1" /> Langsung</Badge>
 											) : (
 												<Badge variant="destructive"><VideoOff className="h-3 w-3 mr-1" /> Offline</Badge>
 											)}
@@ -558,7 +558,7 @@ export default function ProctoringPage() {
 
 									{/* Recent Events */}
 									<div>
-										<h4 className="text-sm font-medium mb-2">Recent Events</h4>
+										<h4 className="text-sm font-medium mb-2">Aktivitas Terakhir</h4>
 										<div className="space-y-2">
 											{selectedStudent.alerts.length > 0 ? (
 												selectedStudent.alerts.map((alert, i) => (
@@ -583,7 +583,7 @@ export default function ProctoringPage() {
 													</div>
 												))
 											) : (
-												<p className="text-sm text-muted-foreground text-center py-4">No recent events</p>
+												<p className="text-sm text-muted-foreground text-center py-4">Tidak ada aktivitas terbaru</p>
 											)}
 										</div>
 									</div>
@@ -593,7 +593,7 @@ export default function ProctoringPage() {
 							<CardContent className="flex items-center justify-center h-[500px]">
 								<div className="text-center text-muted-foreground">
 									<User className="h-16 w-16 mx-auto mb-4 opacity-30" />
-									<p>Select a student to view details</p>
+									<p>Pilih siswa untuk melihat detail</p>
 								</div>
 							</CardContent>
 						)}
@@ -630,18 +630,19 @@ function StudentCard({
 						src={`data:image/jpeg;base64,${student.annotatedFrame}`}
 						alt={student.studentName}
 						className="w-full h-full object-cover"
+						style={{ transition: 'opacity 0.1s ease-in-out' }}
 					/>
 				) : (
 					<div className="flex flex-col items-center gap-1 text-muted-foreground">
 						{student.connected ? (
 							<>
 								<Video className="h-8 w-8 animate-pulse" />
-								<span className="text-xs">Waiting for feed...</span>
+								<span className="text-xs">Menunggu feed...</span>
 							</>
 						) : (
 							<>
 								<VideoOff className="h-8 w-8" />
-								<span className="text-xs">Disconnected</span>
+								<span className="text-xs">Terputus</span>
 							</>
 						)}
 					</div>
@@ -659,13 +660,13 @@ function StudentCard({
 							student.status === "warning" && "bg-yellow-500 hover:bg-yellow-600 text-white",
 						)}
 					>
-						{student.status.toUpperCase()}
+						{student.status === "safe" ? "AMAN" : student.status === "warning" ? "WASPADA" : "MENCURIGAKAN"}
 					</Badge>
 				</div>
 
 				{/* Score indicator */}
 				<div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-					Score: {student.score}/100
+					Skor: {student.score}/100
 				</div>
 
 				{/* Live indicator */}
@@ -708,7 +709,7 @@ function StudentCard({
 					) : (
 						<div className="text-xs text-muted-foreground flex items-center gap-1">
 							<CheckCircle className="h-3 w-3 text-green-500" />
-							No active alerts
+							Tidak ada peringatan
 						</div>
 					)}
 				</div>

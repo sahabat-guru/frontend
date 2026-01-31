@@ -227,10 +227,10 @@ export default function ExamDetailPage() {
 				isConnected: true,
 			}));
 
-			// Start sending frames every 500ms
+			// Start sending frames every 250ms (4 FPS for smoother feed)
 			frameIntervalRef.current = setInterval(() => {
 				captureAndSendFrame();
-			}, 500);
+			}, 250);
 
 			toast({
 				title: "Proctoring Aktif",
