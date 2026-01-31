@@ -156,10 +156,10 @@ export default function MaterialPage() {
 					<TabsContent value="soal" className="mt-0">
 						<div className="mb-4 shrink-0">
 							<h3 className="text-xl font-bold flex items-center gap-2">
-								<ClipboardList className="text-primary" />
-								Smart Question Generator
+								<ClipboardList className="text-[#00C853]" />
+								Exam & Quiz Builder
 							</h3>
-							<p className="text-muted-foreground text-sm">Buat soal latihan dan ujian variatif</p>
+							<p className="text-muted-foreground text-sm">Buat bank soal dalam hitungan detik</p>
 						</div>
 						<div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 							<div className="h-full pr-2 col-span-12 lg:col-span-4">
@@ -169,7 +169,7 @@ export default function MaterialPage() {
 								<Card className="h-full border shadow-sm rounded-xl overflow-hidden bg-white flex flex-col">
 									<CardHeader className="pb-2 bg-white shrink-0">
 										<CardTitle className="text-xl font-bold text-gray-800">Preview Soal</CardTitle>
-										<CardDescription className="text-gray-500">Hasil generate Soal Latihan/Ujian</CardDescription>
+										<CardDescription className="text-gray-500">Belum ada soal</CardDescription>
 									</CardHeader>
 									<CardContent className="h-full p-0">
 										<GeneratedResult result={result} type="QUESTIONS" />

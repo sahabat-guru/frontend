@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { FileJson, Save, Download, FileText, Presentation, BookOpen } from "lucide-react";
+import { FileJson, Save, Download, FileText, Presentation, BookOpen, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -19,6 +19,8 @@ export function GeneratedResult({ result, type }: GeneratedResultProps) {
             <Presentation className="h-16 w-16 text-gray-300" />
           ) : type === "LKPD" ? (
             <BookOpen className="h-16 w-16 text-gray-300" />
+          ) : type === "QUESTIONS" ? (
+            <ClipboardList className="h-16 w-16 text-gray-300" />
           ) : (
             <FileText className="h-16 w-16 text-gray-300" />
           )}
@@ -29,7 +31,9 @@ export function GeneratedResult({ result, type }: GeneratedResultProps) {
                 ? "Klik \"Generate PPT\" untuk membuat slide"
                 : type === "LKPD"
                   ? "Klik \"Generate LKPD\" untuk membuat lembar kerja"
-                  : "Klik Generate untuk melihat hasil"}
+                  : type === "QUESTIONS"
+                    ? "Klik \"Generate Soal\" untuk membuat bank soal"
+                    : "Klik Generate untuk melihat hasil"}
           </p>
         </div>
       </div>
