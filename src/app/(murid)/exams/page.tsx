@@ -182,6 +182,30 @@ export default function ExamPage() {
 				}
 			}
 			
+			// Also check detections for violations
+			if (!currentViolation && data.detections) {
+				// Check for face absence
+				if (data.detections.face && !data.detections.face.present) {
+					currentViolation = "face_absence";
+				}
+				// Check for head pose (looking away)
+				else if (data.detections.head_pose?.is_suspicious) {
+					currentViolation = "head_pose";
+				}
+				// Check for eye gaze (looking away)
+				else if (data.detections.eye_gaze?.is_looking_away) {
+					currentViolation = "eye_gaze";
+				}
+				// Check for multiple faces
+				else if (data.detections.face && data.detections.face.count > 1) {
+					currentViolation = "multi_face";
+				}
+				// Check for forbidden objects (phone)
+				else if (data.detections.objects?.some(obj => obj.is_forbidden)) {
+					currentViolation = "object_detected";
+				}
+			}
+			
 			// Extract detected objects (phones, etc.)
 			const detectedObjects: string[] = [];
 			if (data.detections?.objects) {
@@ -211,14 +235,14 @@ export default function ExamPage() {
 					: prev.events,
 			}));
 
-			// Clear violation after 2 seconds
+			// Clear violation after 3 seconds (increased from 2s)
 			if (currentViolation) {
 				if (violationTimeoutRef.current) {
 					clearTimeout(violationTimeoutRef.current);
 				}
 				violationTimeoutRef.current = setTimeout(() => {
 					setProctoring(prev => ({ ...prev, currentViolation: null }));
-				}, 2000);
+				}, 3000);
 			}
 
 			// Show warning toast for suspicious activity
