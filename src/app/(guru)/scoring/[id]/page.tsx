@@ -60,11 +60,15 @@ export default function ExamReviewPage() {
 			]);
 
 			setExam(examData);
-			setParticipants(scoresData.participants);
+			// Sort participants alphabetically by student name
+			const sortedParticipants = scoresData.participants.sort((a, b) =>
+				a.student.name.localeCompare(b.student.name),
+			);
+			setParticipants(sortedParticipants);
 
 			// Select first participant by default
-			if (scoresData.participants.length > 0) {
-				setSelectedParticipantId(scoresData.participants[0].id);
+			if (sortedParticipants.length > 0) {
+				setSelectedParticipantId(sortedParticipants[0].id);
 			}
 		} catch (err) {
 			setError("Gagal memuat data ujian");
@@ -138,10 +142,10 @@ export default function ExamReviewPage() {
 		}
 	};
 
-	const handleOverrideScore = async () => {
-		if (!currentAnswer || !overrideScore) return;
+	const handleOverrideScore = async (directScore?: number) => {
+		if (!currentAnswer) return;
 
-		const score = parseFloat(overrideScore);
+		const score = directScore ?? parseFloat(overrideScore);
 		if (isNaN(score) || score < 0 || score > 100) {
 			alert("Skor harus antara 0 dan 100");
 			return;
@@ -152,10 +156,15 @@ export default function ExamReviewPage() {
 			await scoringApi.overrideScore(currentAnswer.id, {
 				finalScore: score,
 			});
-			// Refresh answers
-			if (selectedParticipantId) {
-				await fetchParticipantAnswers(selectedParticipantId);
-			}
+			// Update local state immediately
+			setAnswers((prev) =>
+				prev.map((a) =>
+					a.id === currentAnswer.id
+						? { ...a, finalScore: score, status: "SCORED" as const }
+						: a,
+				),
+			);
+			setOverrideScore(score.toString());
 		} catch (err) {
 			console.error("Failed to override score:", err);
 			alert("Gagal menyimpan skor");
@@ -166,8 +175,7 @@ export default function ExamReviewPage() {
 
 	const handleAgree = async () => {
 		if (!currentAnswer || currentAnswer.aiScore === null) return;
-		setOverrideScore(currentAnswer.aiScore.toString());
-		await handleOverrideScore();
+		await handleOverrideScore(currentAnswer.aiScore);
 	};
 
 	if (loading) {
@@ -534,7 +542,9 @@ export default function ExamReviewPage() {
 										<Button
 											size="sm"
 											className="bg-sky-500 hover:bg-sky-600"
-											onClick={handleOverrideScore}
+											onClick={() =>
+												handleOverrideScore()
+											}
 											disabled={savingScore}
 										>
 											{savingScore ? (
