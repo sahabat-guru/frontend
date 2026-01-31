@@ -267,9 +267,29 @@ export default function ProctoringPage() {
 		return () => clearInterval(interval);
 	}, [examStartTime, isConnected]);
 
-	const suspiciousCount = students.filter(s => s.status === "suspicious").length;
-	const warningCount = students.filter(s => s.status === "warning").length;
-	const activeCount = students.filter(s => s.connected).length;
+	// Filter to only show students that are truly active (connected + updated in last 30s)
+	const activeStudents = students.filter(s => {
+		if (!s.connected) return false;
+		const timeSinceUpdate = Date.now() - s.lastUpdate.getTime();
+		return timeSinceUpdate < 30000; // Only show students updated in last 30 seconds
+	});
+
+	// Deduplicate by studentId - only show the most recent session per student
+	const deduplicatedStudents = activeStudents.reduce((acc, student) => {
+		const existing = acc.find(s => s.studentId === student.studentId);
+		if (!existing) {
+			acc.push(student);
+		} else if (student.lastUpdate > existing.lastUpdate) {
+			// Replace with more recent session
+			const index = acc.indexOf(existing);
+			acc[index] = student;
+		}
+		return acc;
+	}, [] as ActiveStudent[]);
+
+	const suspiciousCount = deduplicatedStudents.filter(s => s.status === "suspicious").length;
+	const warningCount = deduplicatedStudents.filter(s => s.status === "warning").length;
+	const activeCount = deduplicatedStudents.filter(s => s.connected).length;
 
 	const statusColor = {
 		safe: "border-green-500/50 bg-green-500/5",
@@ -446,10 +466,10 @@ export default function ProctoringPage() {
 
 			{/* Main Content */}
 			{viewMode === "grid" ? (
-				// Grid View - All Students
-				students.length > 0 ? (
+				// Grid View - Active Students Only
+				deduplicatedStudents.length > 0 ? (
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{students.map((student) => (
+						{deduplicatedStudents.map((student) => (
 							<StudentCard 
 								key={student.sessionId} 
 								student={student}
@@ -475,7 +495,7 @@ export default function ProctoringPage() {
 						<CardContent className="p-0">
 							<ScrollArea className="h-[500px]">
 								<div className="space-y-1 p-4">
-									{students.map((student) => (
+									{deduplicatedStudents.map((student) => (
 										<div
 											key={student.sessionId}
 											className={cn(
