@@ -302,7 +302,7 @@ return "bg-indigo-100 text-indigo-700 hover:bg-indigo-100/80 border-indigo-200";
 						/>
 						Refresh
 					</Button>
-					<Link href="/ujian/baru">
+					<Link href="/materials">
 						<Button className="gap-2 bg-sky-500 hover:bg-sky-600 text-white">
 							<Plus className="h-4 w-4" />
 							Buat Ujian
